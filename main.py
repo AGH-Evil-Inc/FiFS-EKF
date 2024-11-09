@@ -29,11 +29,11 @@ def integrate_gyroscope(q, omega, dt):
 
 
 class OrientationEKF:
-    def __init__(self, dt):
+    def __init__(self, dt, x_init):
         self.dt = dt
 
         # State vector (quaternion and bias): [q_w, q_x, q_y, q_z, b_x, b_y, b_z]
-        self.x = np.array([1, 0, 0, 0, 0, 0, 0], dtype=float)  # Initial quaternion and zero bias
+        self.x = x_init
         self.P = np.eye(7) * 0.1  # Covariance matrix
 
         # Process noise covariance
@@ -107,50 +107,53 @@ class OrientationEKF:
 
 
 
+if __name__ == '__main__':
+    data = pd.read_csv("data/train.csv")
+    print(data.head())
 
+    # Dane z akcelerometru w g -> m/s^2
+    data['AccX'] *= 9.81
+    data['AccY'] *= 9.81
+    data['AccZ'] *= 9.81
 
-data = pd.read_csv("data/train.csv")
-print(data.head())
+    # Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
+    data['GyroX'] *= 0.001 * (np.pi / 180)
+    data['GyroY'] *= 0.001 * (np.pi / 180)
+    data['GyroZ'] *= 0.001 * (np.pi / 180)
 
-# Dane z akcelerometru w g -> m/s^2
-data['AccX'] *= 9.81
-data['AccY'] *= 9.81
-data['AccZ'] *= 9.81
+    g_bias_x = np.mean(data['GyroX'][:1000])
+    g_bias_y = np.mean(data['GyroY'][:1000])
+    g_bias_z = np.mean(data['GyroZ'][:1000])
 
-# Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
-data['GyroX'] *= 0.001 * (np.pi / 180)
-data['GyroY'] *= 0.001 * (np.pi / 180)
-data['GyroZ'] *= 0.001 * (np.pi / 180)
+    dt = 0.005
+    ekf = OrientationEKF(dt, np.array([1, 0, 0, 0, g_bias_x, g_bias_y, g_bias_z], dtype=float))
 
-dt = 0.005
-ekf = OrientationEKF(dt)
+    pred = []
+    for i, row in data.iterrows():
+        gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
+        accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
 
-pred = []
-for i, row in data.iterrows():
-    gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
-    accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
+        # Predykcja za pomocą żyroskopu
+        ekf.predict(gyroscope_measurement)
 
-    # Predykcja za pomocą żyroskopu
-    ekf.predict(gyroscope_measurement)
+        # Korekcja za pomocą akcelerometru (NIE DZIAŁA)
+        #ekf.update(accelerometer_measurement)
 
-    # Korekcja za pomocą akcelerometru (NIE DZIAŁA)
-    #ekf.update(accelerometer_measurement)
+        orientation_euler = quaternion_to_euler(ekf.get_orientation())
+        pred.append(orientation_euler)
 
-    orientation_euler = quaternion_to_euler(ekf.get_orientation())
-    pred.append(orientation_euler)
+    # Pracujemy na radianach, plotuję w kątach
+    plt.plot(data['Time'], [p[0] * 180 / np.pi for p in pred], label="Roll prediction")
+    plt.plot(data['Time'], data['roll'], label="Roll actual")
+    plt.legend()
+    plt.show()
 
-# Pracujemy na radianach, plotuję w kątach
-plt.plot(data['Time'], [p[0] * 180 / np.pi for p in pred], label="Roll prediction")
-plt.plot(data['Time'], data['roll'], label="Roll actual")
-plt.legend()
-plt.show()
+    plt.plot(data['Time'], [p[1] * 180 / np.pi for p in pred], label="Pitch prediction")
+    plt.plot(data['Time'], data['pitch'], label="Pitch actual")
+    plt.legend()
+    plt.show()
 
-plt.plot(data['Time'], [p[1] * 180 / np.pi for p in pred], label="Pitch prediction")
-plt.plot(data['Time'], data['pitch'], label="Pitch actual")
-plt.legend()
-plt.show()
-
-plt.plot(data['Time'], [p[2] * 180 / np.pi for p in pred], label="Yaw prediction")
-plt.plot(data['Time'], data['yaw'], label="Yaw actual")
-plt.legend()
-plt.show()
+    plt.plot(data['Time'], [p[2] * 180 / np.pi for p in pred], label="Yaw prediction")
+    plt.plot(data['Time'], data['yaw'], label="Yaw actual")
+    plt.legend()
+    plt.show()
