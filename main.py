@@ -117,7 +117,10 @@ class OrientationKF:
 
 
 if __name__ == '__main__':
-    #data = pd.read_csv("data/train.csv")
+    data_train = pd.read_csv("data/train.csv")
+
+    # Komentować zamiennie - tylko [train part] albo [train part]+[entire test]
+    # data = data_train
     data = pd.read_csv("data/test.csv")
 
     calibration_samples = 1000
@@ -179,21 +182,23 @@ if __name__ == '__main__':
 
     result_df.to_csv("results/submission.csv", index=False)
 
-    #print(f"Roll MSE = {mean_squared_error(data['roll'], pred_roll)}")
-    #print(f"Pitch MSE = {mean_squared_error(data['pitch'], pred_pitch)}")
-    #print(f"Yaw MSE = {mean_squared_error(data['yaw'], pred_yaw)}")
+    # Liczone tylko dla [train part]
+    print(f"Roll MSE = {mean_squared_error(data_train['roll'], pred_roll[:7000])}")
+    print(f"Pitch MSE = {mean_squared_error(data_train['pitch'], pred_pitch[:7000])}")
+    print(f"Yaw MSE = {mean_squared_error(data_train['yaw'], pred_yaw[:7000])}")
 
+    # Pierwsze 7000 - nałożone prawdziwe pozycja z [train part]
     fig, axs = plt.subplots(3, 1, figsize=(5, 5))
     axs[0].plot(data['Time'], pred_roll, label="Roll prediction")
-    #axs[0].plot(data['Time'], data['roll'], label="Roll actual")
+    axs[0].plot(data_train['Time'], data_train['roll'], label="Roll actual")
     axs[0].legend()
 
     axs[1].plot(data['Time'], pred_pitch, label="Pitch prediction")
-    #axs[1].plot(data['Time'], data['pitch'], label="Pitch actual")
+    axs[1].plot(data_train['Time'], data_train['pitch'], label="Pitch actual")
     axs[1].legend()
 
     axs[2].plot(data['Time'], pred_yaw, label="Yaw prediction")
-    #axs[2].plot(data['Time'], data['yaw'], label="Yaw actual")
+    axs[2].plot(data_train['Time'], data_train['yaw'], label="Yaw actual")
     axs[2].legend()
     fig.tight_layout()
     plt.show()
