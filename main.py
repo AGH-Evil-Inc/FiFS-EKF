@@ -192,13 +192,16 @@ if __name__ == '__main__':
     axs[0].plot(data['Time'], pred_roll, label="Roll prediction")
     axs[0].plot(data_train['Time'], data_train['roll'], label="Roll actual")
     axs[0].legend()
+    axs[0].grid()
 
     axs[1].plot(data['Time'], pred_pitch, label="Pitch prediction")
     axs[1].plot(data_train['Time'], data_train['pitch'], label="Pitch actual")
     axs[1].legend()
+    axs[1].grid()
 
     axs[2].plot(data['Time'], pred_yaw, label="Yaw prediction")
     axs[2].plot(data_train['Time'], data_train['yaw'], label="Yaw actual")
     axs[2].legend()
+    axs[2].grid()
     fig.tight_layout()
     plt.show()
