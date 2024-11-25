@@ -92,7 +92,7 @@ class OrientationKF:
 
         # Obliczamy nowy stan (a w zasadzie jego predykcję)
         self.x += A @ self.x
-        self.x[:4] = normalize_vector(self.x[:4])
+        self.x[0:4] = normalize_vector(self.x[0:4])
 
         # Przewidujemy macierz kowariancji
         self.P = A @ self.P @ A.T + self.Q
@@ -107,7 +107,8 @@ class OrientationKF:
         K = self.P @ self.C.T @ np.linalg.inv(S) # Wzmocnienie Kalmana
 
         # Aktualizacja wektora stanu i kowariancji
-        self.x += K @ e
+        self.x = self.x + (K @ e)
+        self.x[:4] = normalize_vector(self.x[:4])
         self.P = (np.eye(7) - K @ self.C) @ self.P
         #self.x[:4] = normalize_vector(self.x[:4]) # Bez normalizacji pomiar z akcelerometru nie działa poprawnie
         #print(math.sqrt(np.sum(self.x**2)))
