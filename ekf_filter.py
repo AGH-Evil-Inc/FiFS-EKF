@@ -60,24 +60,24 @@ def quaternion_to_euler(q):
 
 def get_Q(gyro_noises):
     gyro_noise_x, gyro_noise_y, gyro_noise_z = gyro_noises
-    Q = np.array([[gyro_noise_x**2, 0, 0],
-                  [0, gyro_noise_y**2, 0],
-                  [0, 0, gyro_noise_z**2]])
+    Q = np.array([[gyro_noise_x**2,               0,               0],
+                  [              0, gyro_noise_y**2,               0],
+                  [              0,               0, gyro_noise_z**2]])
     return Q
 
 def get_Q_bias(gyro_bias_noises):
     gbn_x, gbn_y, gbn_z = gyro_bias_noises
     Q_bias = np.zeros((7, 7))
-    Q_bias[4:7, 4:7] = np.array([[gbn_x**2, 0, 0],
-                                 [0, gbn_y**2, 0],
-                                 [0, 0, gbn_z**2]])
+    Q_bias[4:7, 4:7] = np.array([[gbn_x**2,        0,        0],
+                                 [       0, gbn_y**2,        0],
+                                 [       0,        0, gbn_z**2]])
     return Q_bias
 
 def get_R(accelerometer_noises):
     an_x, an_y, an_z = accelerometer_noises
-    R = np.array([[an_x**2, 0, 0],
-                  [0, an_y**2, 0],
-                  [0, 0, an_z**2]])
+    R = np.array([[an_x**2,       0,       0],
+                  [      0, an_y**2,       0],
+                  [      0,       0, an_z**2]])
     return R
 
 def get_W(x, dt):
