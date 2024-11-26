@@ -26,7 +26,7 @@ if __name__ == '__main__':
     acc_bias_y = np.mean(data['AccY'][:calibration_samples])
     acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - gravity
 
-    acc_var = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
+    acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
 
     # Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
     data['GyroX'] *= 0.001 * (np.pi / 180)
@@ -37,20 +37,21 @@ if __name__ == '__main__':
     g_bias_y = np.mean(data['GyroY'][:calibration_samples])
     g_bias_z = np.mean(data['GyroZ'][:calibration_samples])
 
-    gyro_var = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
+    gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
 
     s1 = 0.0000001
     s2 = 0.0001
 
-    gyro_noise = np.diag(np.append(gyro_var, [s1 ** 2])) * 4e-2  # *(dt**2/4)
-    acc_noise = np.diag(np.append(acc_var, [s2 ** 2]))
+    # gyro_noise = np.diag(np.append(gyro_vars, [s1 ** 2])) * 4e-2  # *(dt**2/4)
+    acc_noise = np.diag(np.append(acc_vars, [s2 ** 2]))
 
     dt = 0.005
     ekf = EKF(q0=[1, 0, 0, 0],
               b0=[g_bias_x, g_bias_y, g_bias_z],
               delta_t=dt,
               init_gyro_bias_err=0.1,
-              gyro_noise=gyro_noise,
+              gyro_noises=gyro_vars,
+              gyro_bias_noises=[0.002,0.002,0.002],
               accelerometer_noise=acc_noise)
 
     pred = []

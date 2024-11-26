@@ -58,19 +58,47 @@ def quaternion_to_euler(q):
     rotation = R.from_quat((x, y, z, w))
     return rotation.as_euler('xyz', degrees=False) # Radiany
 
+def get_Q(gyro_noises):
+    gyro_noise_x, gyro_noise_y, gyro_noise_z = gyro_noises
+    Q = np.array([[gyro_noise_x**2, 0, 0],
+                  [0, gyro_noise_y**2, 0],
+                  [0, 0, gyro_noise_z**2]])
+    return Q
+
+def get_Q_bias(gyro_bias_noises):
+    gbn_x, gbn_y, gbn_z = gyro_bias_noises
+    Q_bias = np.zeros((7, 7))
+    Q_bias[4:7, 4:7] = np.array([[gbn_x**2, 0, 0],
+                                 [0, gbn_y**2, 0],
+                                 [0, 0, gbn_z**2]])
+    return Q_bias
+
+def get_W(x, dt):
+    qw, qx, qy, qz = x.flat[0:4]
+    return dt/2 * np.array([
+        [-qx, -qy, -qz],
+        [ qw, -qz,  qy],
+        [ qz,  qw, -qx],
+        [-qy,  qx,  qw],
+        [  0,   0,   0],
+        [  0,   0,   0],
+        [  0,   0,   0]
+    ])
+
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
-                 init_gyro_bias_err=0.1, gyro_noise=0.015, 
-                 accelerometer_noise=1.0):
+                 init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
+                 accelerometer_noise=1):
+        # TODO: usunąć stałe dt, zrobić na parametr w predict() i update()
         self.dt = delta_t
-        # Wektor stanu (kwaternion i bias): [q_w, q_x, q_y, q_z, b_x, b_y, b_z]
+        # Wektor stanu (kwaternion i bias): [7x1] [q_w, q_x, q_y, q_z, b_x, b_y, b_z]
         self.x = np.c_[q0 + b0]
 
-        # Macierz kowariancji P
+        # Macierz kowariancji P [7x7]
         self.P = np.identity(7) # zainicjalizowana czymkolwiek
-        # Część kwaternionowa (orientacji/obrotu/pozycji)
+        # - Część kwaternionowa (orientacji/obrotu/pozycji)
         self.P[0:4, 0:4] = np.identity(4) * 0.01
-        # Część biasu żyroskopu
+        # - Część biasu żyroskopu
         self.P[4:7, 4:7] = np.identity(3) * (init_gyro_bias_err ** 2)
 
         # Macierz wyjścia C
@@ -78,10 +106,19 @@ class EKF:
                            [0, 1, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0]])
+        
+        # Macierz kowariancji szumu procesu (GYRO) [3x3]
+        # Przemnażana w predykcji przez W
+        # [rad/sec]
+        self.Q = get_Q(gyro_noises)
+        # Macierz kowariancji szumu biasu pomiaru [7x7]
+        # [rad/sec]
+        self.Q_bias = get_Q_bias(gyro_bias_noises)
 
-        self.Q = np.zeros(shape=(7, 7))
-        self.Q[:4, :4] = gyro_noise
-
+        #TODO: przerobić na poniższą (3x3)
+        # Macierz kowariancji szumu obserwacji (ACC) [3x3]
+        # Przemnażana w korekcji przez V
+        # [m/s^2]
         self.R = accelerometer_noise
 
         # Szum procesu
@@ -106,13 +143,16 @@ class EKF:
                       [0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0],
                       [0, 0, 0, 0, 0, 0, 0]])
+        
+        # Macierz W do przekształcenia Q procesu [prędkości x,y,z] -> [kwaternion]
+        W = get_W(self.x, self.dt)
 
         # Obliczamy nowy stan (a w zasadzie jego predykcję)
         self.x += A @ self.x
         self.x[0:4] = normalize_vector(self.x[0:4])
 
         # Przewidujemy macierz kowariancji
-        self.P = A @ self.P @ A.T + self.Q
+        self.P = A @ self.P @ A.T + W @ self.Q @ W.T + self.Q_bias
 
     def update(self, accelerations):
         state_rot_mat = quaternion_to_rotation_matrix(self.x[:4]) # Macierz rotacji stanu
