@@ -49,6 +49,7 @@ if __name__ == '__main__':
     ekf = EKF(q0=[1, 0, 0, 0],
               b0=[g_bias_x, g_bias_y, g_bias_z],
               delta_t=dt,
+              init_gyro_bias_err=0.1,
               gyro_noise=gyro_noise,
               accelerometer_noise=acc_noise)
 
