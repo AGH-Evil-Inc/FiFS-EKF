@@ -96,6 +96,18 @@ class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
                  init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
                  accelerometer_noise=1):
+        """
+        Inicjalizacja EKF (Extended Kalman Filer)
+
+        Parameters:
+            q0 (List[qw, qx, qy, qz]): Początkowa orientacja [kwaternion znormalizowany]
+            b0 (List[bx, by, bz]): Początkowe biasy GYRO [rad/sec]
+            delta_t: TODO: usunąć
+            init_gyro_bias_err (float): początkowa niepewność biasu GYRO w P (1 odch. stand.) [rad/sec]
+            gyro_noises (List[float, float, float]): Szum GYRO (żyroskop) [rad/sec]
+            gyro_bias_noises (List[float, float, float]): Szum biasu GYRO [rad/sec]
+            accelerometer_noise (List[float, float, float]): Szum ACC (akcelerometr) [m/s^2]
+        """
         # TODO: usunąć stałe dt, zrobić na parametr w predict() i update()
         self.dt = delta_t
         # Wektor stanu (kwaternion i bias): [7x1] [q_w, q_x, q_y, q_z, b_x, b_y, b_z]
@@ -137,6 +149,13 @@ class EKF:
         # self.R = np.eye(4) * 0.0001
 
     def predict(self, angular_velocities):
+        """
+        Predykcja EKF - użyty GYRO (żyroskop) jako proces
+
+        Parameters:
+            angular_velocities (List[wx, wy, wz]): Prędkości kątowe GYRO [rad/sec]
+            dt (float): krok czasu [sec] TODO: dodać
+        """
         # bias żyroskopu w osiach x, y, z
         biases = self.x[4:].reshape(3)
 
@@ -180,3 +199,4 @@ class EKF:
 
     def get_orientation(self):
         return self.x[:4]
+    
