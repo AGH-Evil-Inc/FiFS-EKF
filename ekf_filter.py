@@ -59,10 +59,10 @@ def quaternion_to_euler(q):
     return rotation.as_euler('xyz', degrees=False) # Radiany
 
 class EKF:
-    def __init__(self, delta_t, process_noise, measurment_noise, x_init):
+    def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, gyro_noise=0.015, accelerometer_noise=1.0):
         self.dt = delta_t
         # Wektor stanu (kwaternion i bias): [q_w, q_x, q_y, q_z, b_x, b_y, b_z]
-        self.x = np.array(x_init).reshape((7, 1))
+        self.x = np.c_[q0 + b0]
         self.P = np.eye(7) * 0.1  # Macierz kowariancji
 
         # Macierz wyjścia C
@@ -72,9 +72,9 @@ class EKF:
                            [0, 0, 0, 1, 0, 0, 0]])
 
         self.Q = np.zeros(shape=(7, 7))
-        self.Q[:4, :4] = process_noise
+        self.Q[:4, :4] = gyro_noise
 
-        self.R = measurment_noise
+        self.R = accelerometer_noise
 
         # Szum procesu
         # self.Q = np.eye(7) * 0.00000001

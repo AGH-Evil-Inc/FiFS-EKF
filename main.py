@@ -42,11 +42,15 @@ if __name__ == '__main__':
     s1 = 0.0000001
     s2 = 0.0001
 
-    proc_noise = np.diag(np.append(gyro_var, [s1 ** 2])) * 4e-2  # *(dt**2/4)
-    meas_noise = np.diag(np.append(acc_var, [s2 ** 2]))
+    gyro_noise = np.diag(np.append(gyro_var, [s1 ** 2])) * 4e-2  # *(dt**2/4)
+    acc_noise = np.diag(np.append(acc_var, [s2 ** 2]))
 
     dt = 0.005
-    ekf = EKF(dt, proc_noise, meas_noise, np.array([1, 0, 0, 0, g_bias_x, g_bias_y, g_bias_z], dtype=float))
+    ekf = EKF(q0=[1, 0, 0, 0],
+              b0=[g_bias_x, g_bias_y, g_bias_z],
+              delta_t=dt,
+              gyro_noise=gyro_noise,
+              accelerometer_noise=acc_noise)
 
     pred = []
     for _, row in data.iterrows():
