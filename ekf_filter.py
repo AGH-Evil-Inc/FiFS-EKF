@@ -92,6 +92,19 @@ def get_W(x, dt):
         [  0,   0,   0]
     ])
 
+def get_F(x, angular_velocities, dt):
+    qw, qx, qy, qz, bx, by, bz = x.flat
+    wx, wy, wz = angular_velocities.flat
+    return np.array([
+        [             1, dt*(-wx + bx)/2, dt*(-wy + by)/2, dt*(-wz + bz)/2,  dt*qx/2,  dt*qy/2,  dt*qz/2],
+        [dt*(wx - bx)/2,               1, dt*( wz - bz)/2, dt*(-wy + by)/2, -dt*qw/2,  dt*qz/2, -dt*qy/2],
+        [dt*(wy - by)/2, dt*(-wz + bz)/2,               1, dt*( wx - bx)/2, -dt*qz/2, -dt*qw/2,  dt*qx/2],
+        [dt*(wz - bz)/2, dt*( wy - by)/2, dt*(-wx + bx)/2,               1,  dt*qy/2, -dt*qx/2, -dt*qw/2],
+        [             0,               0,               0,               0,        1,        0,        0],
+        [             0,               0,               0,               0,        0,        1,        0],
+        [             0,               0,               0,               0,        0,        0,        1]
+    ])
+
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
                  init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
@@ -130,7 +143,7 @@ class EKF:
         # Przemnażana w predykcji przez W
         # [rad/sec]
         self.Q = get_Q(gyro_noises)
-        # Macierz kowariancji szumu biasu pomiaru [7x7]
+        # Macierz kowariancji szumu biasu GYRO [7x7]
         # [rad/sec]
         self.Q_bias = get_Q_bias(gyro_bias_noises)
 
@@ -156,6 +169,12 @@ class EKF:
             angular_velocities (List[wx, wy, wz]): Prędkości kątowe GYRO [rad/sec]
             dt (float): krok czasu [sec] TODO: dodać
         """
+        # Prędkości kątowe na wektor pionowy
+        # angular_velocities = np.c_[angular_velocities]
+
+        # Macierz F - Jakobian z f()
+        F = get_F(self.x, angular_velocities, self.dt)
+
         # bias żyroskopu w osiach x, y, z
         biases = self.x[4:].reshape(3)
 
