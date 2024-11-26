@@ -73,6 +73,13 @@ def get_Q_bias(gyro_bias_noises):
                                  [0, 0, gbn_z**2]])
     return Q_bias
 
+def get_R(accelerometer_noises):
+    an_x, an_y, an_z = accelerometer_noises
+    R = np.array([[an_x**2, 0, 0],
+                  [0, an_y**2, 0],
+                  [0, 0, an_z**2]])
+    return R
+
 def get_W(x, dt):
     qw, qx, qy, qz = x.flat[0:4]
     return dt/2 * np.array([
@@ -115,10 +122,11 @@ class EKF:
         # [rad/sec]
         self.Q_bias = get_Q_bias(gyro_bias_noises)
 
-        #TODO: przerobić na poniższą (3x3)
+        #TODO: przerobić na poniższą (3x3) - gdy porównanie w update() będzie wektorem grawitacji
         # Macierz kowariancji szumu obserwacji (ACC) [3x3]
         # Przemnażana w korekcji przez V
         # [m/s^2]
+        #self.R = get_R(accelerometer_noises)
         self.R = accelerometer_noise
 
         # Szum procesu
