@@ -63,7 +63,7 @@ if __name__ == '__main__':
         ekf.predict(gyroscope_measurement)
 
         # Korekcja za pomocą akcelerometru
-        ekf.update(accelerometer_measurement)
+        # ekf.update(accelerometer_measurement)
 
         orientation_euler = quaternion_to_euler(ekf.get_orientation())
         pred.append(orientation_euler)

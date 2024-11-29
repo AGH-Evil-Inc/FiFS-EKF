@@ -4,10 +4,21 @@ from scipy.spatial.transform import Rotation as R
 
 gravity = 9.81
 
+def quaternion_identity():
+    """
+    Zwraca kwaternion jednostkowy (1, 0i, 0j ,0k) - część rzeczywista 1, czyli brak obrotu.
+    Returns:
+        identity_quaternion (np.array[4x1]): Kwaterinon jednostkowy (1, 0i, 0j, 0k), jako wektor pionowy
+    """
+    # c_[] - pionizacja wektora [4] na [4x1]
+    return np.c_[[1, 0, 0, 0]]
+
+def calculate_vector_norm(v):
+    return np.sqrt(np.sum(v**2))
 
 def normalize_vector(v):
-    norm = np.sqrt(np.sum(v**2))
-    return v/norm
+    norm = calculate_vector_norm(v)
+    return v / norm
 
 def get_quaternion_rot_from_accelerometer(accelerations):
     acc_norm = normalize_vector(accelerations)
@@ -58,6 +69,62 @@ def quaternion_to_euler(q):
     rotation = R.from_quat((x, y, z, w))
     return rotation.as_euler('xyz', degrees=False) # Radiany
 
+
+def quaternion_from_axis_angle(unit_axis, angle_rad):
+    """
+    Wyznacza kwaternion obrotu z reprezentacji axis-angle.
+
+    Parameters:
+        unit_axis (np.array[3x1]): Oś obrotu (znormalizowany wektor) w reprezentacji axis-angle
+        angle_rad (float): Kąt obrotu w reprezentacji axis-angle [rad]
+
+    Returns:
+        quaternion (np.array[4x1]): Kwaternion obrotu (qw, qx i, qy j, qz k), wektor pionowy
+    """
+    # Ekstrakcja wyrazów osi obrotu (reprezentacja axis-angle)
+    ux, uy, uz = unit_axis.flat
+
+    # sin(angle/2) do obliczeń niżej
+    sin_half = np.sin(angle_rad / 2)
+
+    # Wyznaczanie wyrazów kwaternionu obrotu (qw, qx, qy, qz) z reprezentacji axis-angle
+    qw = np.cos(angle_rad / 2)
+    qx = ux * sin_half
+    qy = uy * sin_half
+    qz = uz * sin_half
+
+    # c_[] - pionizacja wektora [4] na [4x1]
+    return np.c_[[qw, qx, qy, qz]]
+
+
+def quaternion_from_rotation_vector(rotation_vector, eps=0):
+    """
+    Wyznacza kwaternion obrotu z wektora obrotu [rad]
+
+    Parameters:
+        rotation_vector (np.array[3x1]): Wektor obrotu [rad]
+        eps (float): Epsilon maszynowy, aby zapobiec dzieleniu przez 0
+
+    Returns:
+        quaternion (np.array[4x1]): Kwaternion obrotu (qw, qx i, qy j, qz k), wektor pionowy
+    """
+    # Ektrakcja kąta obrotu (reprezentacja axis-angle) z wektora-obrotu [rad]
+    angle_rad = calculate_vector_norm(rotation_vector)
+
+    # Ochrona przed dzieleniem przez 0; poniżej eps -> przyjmujemy zero
+    if angle_rad > eps:
+        # Wyznaczenie osi obrotu (do reprezentacji axis-angle)
+        unit_axis = rotation_vector / angle_rad
+        # axis-angle -> kwaternion obrotu
+        q_unit = quaternion_from_axis_angle(unit_axis, angle_rad)
+    else:
+        # Dla kąta=0 -> brak obrotu (kwaternion jednostkowy)
+        q_unit = quaternion_identity()
+
+    # print(f"q_unit: {calculate_vector_norm(q_unit)}")
+    return q_unit
+
+
 def get_Q(gyro_noises):
     gyro_noise_x, gyro_noise_y, gyro_noise_z = gyro_noises
     Q = np.array([[gyro_noise_x**2,               0,               0],
@@ -92,6 +159,43 @@ def get_W(x, dt):
         [  0,   0,   0]
     ])
 
+def f(x, angular_velocities, dt):
+    """
+    Funkcja predykcji stanu x (kwaternion+biasy) na podstawie pomiaru z żyroskopu 3-osiowego.
+
+    Parameters:
+        x (np.array[7x1]): Wektor stanu (qw, qx, qy, qz, bx, by, bz); wektor pionowy
+            - wyrazy kwaternionu orientacji: qw, qx, qy, qz
+            - biasy żyroskopu: bx, by, bz [rad/s]
+        angular_velocities (np.array[3x1]): Prędkości kątowe (wx, wy, wz) z żyroskopu; wektor pionowy [rad/s]
+        dt (float): Okres próbki [s]
+
+    Returns:
+        x (np.array[7x1]): Wektor stanu (qw, qx, qy, qz, bx, by, bz) po predykcji; wektor pionowy
+            - wyrazy kwaternionu orientacji: qw, qx, qy, qz
+            - biasy żyroskopu: bx, by, bz [rad/s]
+    """
+    # Ekstrakcja z wektora stanu [x]
+    # kwaternion orientacji (pozycji obrotowej)
+    q = x[0:4]
+    # biasy żyroskopu
+    gyro_biases = x[4:7]
+
+    # Wektor obrotu (kompaktowe axis-angle)
+    delta_angles = (angular_velocities - gyro_biases) * dt
+
+    # Wektor obrotu -> kwaternion obrotu
+    dq = quaternion_from_rotation_vector(delta_angles)
+    # TODO: normalizacja dq
+
+    # Predykcja nowej orientacji (orientacja += zmiana, ale mnożenie dla kwaternionu)
+    q_new = quaternion_multiply(q, dq)
+    q_new = normalize_vector(q_new)     # Normalizacja w celu uniknięcia błędów komputera
+    
+    # Złożenie powrotne wektora stanu po aktualizacji orientacji (pionowy)
+    return np.r_[q_new, gyro_biases]
+
+
 def get_F(x, angular_velocities, dt):
     qw, qx, qy, qz, bx, by, bz = x.flat
     wx, wy, wz = angular_velocities.flat
@@ -104,6 +208,7 @@ def get_F(x, angular_velocities, dt):
         [             0,               0,               0,               0,        0,        1,        0],
         [             0,               0,               0,               0,        0,        0,        1]
     ])
+
 
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
@@ -170,35 +275,39 @@ class EKF:
             dt (float): krok czasu [sec] TODO: dodać
         """
         # Prędkości kątowe na wektor pionowy
-        # angular_velocities = np.c_[angular_velocities]
+        angular_velocities = np.c_[angular_velocities]
 
-        # Macierz F - Jakobian z f()
+        # Macierz F - Jakobian z f() [7x7]
         F = get_F(self.x, angular_velocities, self.dt)
 
-        # bias żyroskopu w osiach x, y, z
-        biases = self.x[4:].reshape(3)
+        # # bias żyroskopu w osiach x, y, z
+        # biases = self.x[4:].reshape(3)
 
-        # Odejmujemy bias od nowych pomiarów żyroskopu
-        w_x, w_y, w_z = 0.5 * self.dt * (angular_velocities - biases)
+        # # Odejmujemy bias od nowych pomiarów żyroskopu
+        # w_x, w_y, w_z = 0.5 * self.dt * (angular_velocities - biases)
 
-        # Tworzymy macierz przejścia A
-        A = np.array([[0, -w_x, -w_y, -w_z, 0, 0, 0],
-                      [w_x, 0, w_z, -w_y, 0, 0, 0],
-                      [w_y, -w_z, 0, w_x, 0, 0, 0],
-                      [w_z, w_y, -w_x, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 0, 0]])
+        # # Tworzymy macierz przejścia A
+        # A = np.array([[0, -w_x, -w_y, -w_z, 0, 0, 0],
+        #               [w_x, 0, w_z, -w_y, 0, 0, 0],
+        #               [w_y, -w_z, 0, w_x, 0, 0, 0],
+        #               [w_z, w_y, -w_x, 0, 0, 0, 0],
+        #               [0, 0, 0, 0, 0, 0, 0],
+        #               [0, 0, 0, 0, 0, 0, 0],
+        #               [0, 0, 0, 0, 0, 0, 0]])
         
         # Macierz W do przekształcenia Q procesu [prędkości x,y,z] -> [kwaternion]
         W = get_W(self.x, self.dt)
 
         # Obliczamy nowy stan (a w zasadzie jego predykcję)
-        self.x += A @ self.x
-        self.x[0:4] = normalize_vector(self.x[0:4])
+        # self.x += A @ self.x
+        # self.x[0:4] = normalize_vector(self.x[0:4]) # TODO: użyć? Normalizacja w celu uniknięcia błędów komputera
+
+        # Obliczamy predykcję stanu
+        self.x = f(self.x, angular_velocities, self.dt)
 
         # Przewidujemy macierz kowariancji
-        self.P = A @ self.P @ A.T + W @ self.Q @ W.T + self.Q_bias
+        # self.P = A @ self.P @ A.T + W @ self.Q @ W.T + self.Q_bias
+        self.P = F @ self.P @ F.T + W @ self.Q @ W.T + self.Q_bias
 
     def update(self, accelerations):
         state_rot_mat = quaternion_to_rotation_matrix(self.x[:4]) # Macierz rotacji stanu
