@@ -80,10 +80,21 @@ if __name__ == '__main__':
 
     result_df.to_csv("results/submission.csv", index=False)
 
-    # Liczone tylko dla [train part]
-    print(f"Roll MSE = {mean_squared_error(data_train['roll'], pred_roll[:7000])}")
-    print(f"Pitch MSE = {mean_squared_error(data_train['pitch'], pred_pitch[:7000])}")
-    print(f"Yaw MSE = {mean_squared_error(data_train['yaw'], pred_yaw[:7000])}")
+    # MSE (Mean Square Error)
+    # Liczone tylko dla [train part] (piersze 7000)
+    mse_7_roll  = mean_squared_error(data_train['roll'], pred_roll[:7000])
+    mse_7_pitch = mean_squared_error(data_train['pitch'], pred_pitch[:7000])
+    mse_7_yaw   = mean_squared_error(data_train['yaw'], pred_yaw[:7000])
+    mse_7_mean  = np.mean([mse_7_roll, mse_7_pitch, mse_7_yaw])
+    # Liczone tylko dla pierwszych 5000
+    mse_5_roll  = mean_squared_error(data_train['roll'][:5000], pred_roll[:5000])
+    mse_5_pitch = mean_squared_error(data_train['pitch'][:5000], pred_pitch[:5000])
+    mse_5_yaw   = mean_squared_error(data_train['yaw'][:5000], pred_yaw[:5000])
+    mse_5_mean  = np.mean([mse_5_roll, mse_5_pitch, mse_5_yaw])
+    # Porównanie MSE
+    print("Sample count |  Roll MSE | Pitch MSE |  Yaw MSE  | Combined MSE")
+    print(f"     7000    | {mse_7_roll:9.6} | {mse_7_pitch:9.6} | {mse_7_yaw:9.6} | {mse_7_mean:.6}")
+    print(f"     5000    | {mse_5_roll:9.6} | {mse_5_pitch:9.6} | {mse_5_yaw:9.6} | {mse_5_mean:.6}")
 
     # Pierwsze 7000 - nałożone prawdziwe pozycja z [train part]
     fig, axs = plt.subplots(3, 1, figsize=(5, 5))
