@@ -49,6 +49,7 @@ if __name__ == '__main__':
     dt = 0.005
     ekf = EKF(q0=[1, 0, 0, 0],
               b0=[g_bias_x, g_bias_y, g_bias_z],
+            #   b0=[0,0,0],
               delta_t=dt,
               init_gyro_bias_err=0.1,
               gyro_noises=gyro_vars,
@@ -61,7 +62,9 @@ if __name__ == '__main__':
     h_vec = []
     for _, row in data.iterrows():
         gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
+        # gyroscope_measurement = np.array([row['GyroX'] - g_bias_x, row['GyroY'] - g_bias_y, row['GyroZ'] - g_bias_z])
         accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
+        # accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
 
         # Predykcja za pomocą żyroskopu
         ekf.predict(gyroscope_measurement)
@@ -86,6 +89,7 @@ if __name__ == '__main__':
     print(result_df.head())
 
     result_df.to_csv("results/submission.csv", index=False)
+
 
     # MSE (Mean Square Error)
     # Liczone tylko dla [train part] (piersze 7000)
