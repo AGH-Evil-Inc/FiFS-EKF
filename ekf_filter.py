@@ -309,7 +309,7 @@ def get_H(x):
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
                  init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
-                 accelerometer_noise=1):
+                 accelerometer_noises=[0.002, 0.002, 0.002]):
         """
         Inicjalizacja EKF (Extended Kalman Filer)
 
@@ -335,10 +335,10 @@ class EKF:
         self.P[4:7, 4:7] = np.identity(3) * (init_gyro_bias_err ** 2)
 
         # Macierz wyjścia C
-        self.C = np.array([[1, 0, 0, 0, 0, 0, 0],
-                           [0, 1, 0, 0, 0, 0, 0],
-                           [0, 0, 1, 0, 0, 0, 0],
-                           [0, 0, 0, 1, 0, 0, 0]])
+        # self.C = np.array([[1, 0, 0, 0, 0, 0, 0],
+        #                    [0, 1, 0, 0, 0, 0, 0],
+        #                    [0, 0, 1, 0, 0, 0, 0],
+        #                    [0, 0, 0, 1, 0, 0, 0]])
         
         # Macierz kowariancji szumu procesu (GYRO) [3x3]
         # Przemnażana w predykcji przez W
@@ -352,8 +352,8 @@ class EKF:
         # Macierz kowariancji szumu obserwacji (ACC) [3x3]
         # Przemnażana w korekcji przez V
         # [m/s^2]
-        #self.R = get_R(accelerometer_noises)
-        self.R = accelerometer_noise
+        self.R = get_R(accelerometer_noises)
+        # self.R = accelerometer_noises
 
         # Szum procesu
         # self.Q = np.eye(7) * 0.00000001
@@ -406,18 +406,39 @@ class EKF:
         self.P = F @ self.P @ F.T + W @ self.Q @ W.T + self.Q_bias
 
     def update(self, accelerations):
-        state_rot_mat = quaternion_to_rotation_matrix(self.x[:4]) # Macierz rotacji stanu
-        acc_predict_vec = state_rot_mat.T @ np.array([0, 0, gravity]) # Przewidywany pomiar akcelerometru
-        e_vec = accelerations - acc_predict_vec.reshape(3) # Różnica wektora zmierzonego i przewidzianego
-        e = np.array([0, e_vec[0], e_vec[1], e_vec[2]]).reshape((4, 1)) # Na kwaternion
+        # state_rot_mat = quaternion_to_rotation_matrix(self.x[:4]) # Macierz rotacji stanu
+        # acc_predict_vec = state_rot_mat.T @ np.array([0, 0, GRAVITY]) # Przewidywany pomiar akcelerometru
+        # e_vec = accelerations - acc_predict_vec.reshape(3) # Różnica wektora zmierzonego i przewidzianego
+        # e = np.array([0, e_vec[0], e_vec[1], e_vec[2]]).reshape((4, 1)) # Na kwaternion
 
-        S = self.C @ self.P @ self.C.T + self.R
-        K = self.P @ self.C.T @ np.linalg.inv(S) # Wzmocnienie Kalmana
+        accelerations = np.c_[accelerations]
+        # z = GRAVITY * normalize_vector(accelerations)
+        z = normalize_vector(accelerations)
+        # print("---------------------")
+        # print(z.reshape(3))
+        h_temp = h(self.x)
+        # print(h_temp.reshape(3))
+        y = z - h_temp
+        # y = z - h(self.x)
+        H = get_H(self.x)
+
+        # S = self.C @ self.P @ self.C.T + self.R
+        # K = self.P @ self.C.T @ np.linalg.inv(S) # Wzmocnienie Kalmana
+        S = H @ self.P @ H.T + self.R
+        K = (self.P @ H.T) @ np.linalg.inv(S) # Wzmocnienie Kalmana
+
+        # Aktualizacja wektora stanu i kowariancji (kwaternionowo)
+        # k_temp = (K @ y)
+        # k_temp[:4] = normalize_vector(k_temp[:4])
+        # self.x[:4] = quaternion_multiply(self.x[:4], k_temp[:4])
+        # self.x[4:] = self.x[4:] + k_temp[4:]
 
         # Aktualizacja wektora stanu i kowariancji
-        self.x = self.x + (K @ e)
-        self.x[:4] = normalize_vector(self.x[:4])
-        self.P = (np.eye(7) - K @ self.C) @ self.P
+        self.x = self.x + (K @ y)
+        self.x[:4] = normalize_vector(self.x[0:4])
+        # self.P = (np.eye(7) - K @ self.C) @ self.P
+        self.P = (np.eye(7) - K @ H) @ self.P
+
         #self.x[:4] = normalize_vector(self.x[:4]) # Bez normalizacji pomiar z akcelerometru nie działa poprawnie
         #print(math.sqrt(np.sum(self.x**2)))
 

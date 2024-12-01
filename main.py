@@ -52,7 +52,7 @@ if __name__ == '__main__':
               init_gyro_bias_err=0.1,
               gyro_noises=gyro_vars,
               gyro_bias_noises=[0.002,0.002,0.002],
-              accelerometer_noise=acc_noise)
+              accelerometer_noises=acc_vars)
 
     pred = []
     for _, row in data.iterrows():
