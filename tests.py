@@ -14,7 +14,12 @@ if __name__ == '__main__':
 
     acc_bias_x = np.mean(data['AccX'][:calibration_samples])
     acc_bias_y = np.mean(data['AccY'][:calibration_samples])
-    acc_bias_z = np.mean(data['AccZ'][:calibration_samples])
+    acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - gravity
+
+    
+    data['AccX'] -= acc_bias_x
+    data['AccY'] -= acc_bias_y
+    data['AccZ'] -= acc_bias_z
 
     # Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
     data['GyroX'] *= 0.001 * (np.pi / 180)
