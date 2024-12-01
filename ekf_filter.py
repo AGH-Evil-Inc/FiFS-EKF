@@ -193,6 +193,13 @@ def get_W(x, dt):
         [  0,   0,   0]
     ])
 
+def get_V():
+    return np.array([
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+    ])
+
 def f(x, angular_velocities, dt):
     """
     Funkcja predykcji stanu x (kwaternion+biasy) na podstawie pomiaru z żyroskopu 3-osiowego.
