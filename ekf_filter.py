@@ -40,15 +40,49 @@ def quaternion_multiply(q1, q2):
         w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2
     ])
 
-def quaternion_to_rotation_matrix(q):
+def quaternion_to_rotation_matrix(q_unit):
+    """
+    Wyznacza macierz obrotu z kwaternionu obrotu
+
+    Parameters:
+        q_unit (np.array[4x1]): Kwaternion obrotu (qw, qx, qy, qz); wektor pionowy
+
+    Returns:
+        rotation_matrix (np.array[3x3]): Macierz obrotu
+    """
     # forma Inhomogenous
-    # TODO: może użyć Homogenous? (https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles#Rotation_matrices)
-    w, x, y, z = q
+    # w, x, y, z = q_unit
+    # return np.array([
+    #     [1 - 2 * (y ** 2 + z ** 2), 2 * (x * y - w * z), 2 * (x * z + w * y)],
+    #     [2 * (x * y + w * z), 1 - 2 * (x ** 2 + z ** 2), 2 * (y * z - w * x)],
+    #     [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x ** 2 + y ** 2)]
+    # ])
+
+    # forma Homogenous
+    w, x, y, z = q_unit.flat
+    w2 = w * w
+    x2 = x * x
+    y2 = y * y
+    z2 = z * z
+    # Row 1
+    r11 = w2 + x2 - y2 - z2
+    r12 = 2 * (x * y - w * z)
+    r13 = 2 * (w * y + x * z)
+    # Row 2
+    r21 = 2 * (x * y + w * z)
+    r22 = w2 - x2 + y2 - z2
+    r23 = 2 * (y * z - w * x)
+    # Row 3:
+    r31 = 2 * (x * z - w * y)
+    r32 = 2 * (y * z + w * x)
+    r33 = w2 - x2 - y2 + z2
+    # Combine:
     return np.array([
-        [1 - 2 * (y ** 2 + z ** 2), 2 * (x * y - w * z), 2 * (x * z + w * y)],
-        [2 * (x * y + w * z), 1 - 2 * (x ** 2 + z ** 2), 2 * (y * z - w * x)],
-        [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x ** 2 + y ** 2)]
+        [r11, r12, r13],
+        [r21, r22, r23],
+        [r31, r32, r33]
     ])
+
 
 def quaternion_inverse(q):
     w, x, y, z = q
