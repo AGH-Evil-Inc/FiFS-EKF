@@ -238,6 +238,9 @@ def f(x, angular_velocities, dt):
 
 
 def get_F(x, angular_velocities, dt):
+    """
+    Zwraca Jakobian funkcji f()
+    """
     qw, qx, qy, qz, bx, by, bz = x.flat
     wx, wy, wz = angular_velocities.flat
     return np.array([
