@@ -2,7 +2,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-gravity = 9.81
+GRAVITY = 9.81
 
 def quaternion_identity():
     """

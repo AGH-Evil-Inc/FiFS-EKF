@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 
 from ekf_filter import EKF
-from ekf_filter import gravity
+from ekf_filter import GRAVITY
 from ekf_filter import quaternion_to_euler
 
 
@@ -18,13 +18,14 @@ if __name__ == '__main__':
     calibration_samples = 1000
 
     # Dane z akcelerometru w g -> m/s^2
-    data['AccX'] *= gravity
-    data['AccY'] *= gravity
-    data['AccZ'] *= gravity
+    data['AccX'] *= GRAVITY
+    data['AccY'] *= GRAVITY
+    # data['AccX'], data['AccY'] = data['AccY'], data['AccX']
+    data['AccZ'] *= GRAVITY
 
     acc_bias_x = np.mean(data['AccX'][:calibration_samples])
     acc_bias_y = np.mean(data['AccY'][:calibration_samples])
-    acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - gravity
+    acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
 
     acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
 
