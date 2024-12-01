@@ -362,6 +362,11 @@ class EKF:
         # Szum pomiaru
         # self.R = np.eye(4) * 0.0001
 
+        print(self.P)
+        print(self.Q)
+        print(self.Q_bias)
+        print(self.R)
+
     def predict(self, angular_velocities):
         """
         Predykcja EKF - użyty GYRO (żyroskop) jako proces
@@ -441,6 +446,8 @@ class EKF:
 
         #self.x[:4] = normalize_vector(self.x[:4]) # Bez normalizacji pomiar z akcelerometru nie działa poprawnie
         #print(math.sqrt(np.sum(self.x**2)))
+
+        return z.reshape(3), h_temp.reshape(3)
 
     def get_orientation(self):
         return self.x[:4]

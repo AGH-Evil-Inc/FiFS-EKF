@@ -56,6 +56,9 @@ if __name__ == '__main__':
               accelerometer_noises=acc_vars)
 
     pred = []
+
+    z_vec = []
+    h_vec = []
     for _, row in data.iterrows():
         gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
         accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
@@ -64,7 +67,10 @@ if __name__ == '__main__':
         ekf.predict(gyroscope_measurement)
 
         # Korekcja za pomocą akcelerometru
-        # ekf.update(accelerometer_measurement)
+        z, h = ekf.update(accelerometer_measurement)
+
+        z_vec.append(z)
+        h_vec.append(h)
 
         orientation_euler = quaternion_to_euler(ekf.get_orientation())
         pred.append(orientation_euler)
@@ -97,21 +103,42 @@ if __name__ == '__main__':
     print(f"     7000    | {mse_7_roll:9.6f} | {mse_7_pitch:9.6f} | {mse_7_yaw:9.6f} | {mse_7_mean:.6f}")
     print(f"     5000    | {mse_5_roll:9.6f} | {mse_5_pitch:9.6f} | {mse_5_yaw:9.6f} | {mse_5_mean:.6f}")
 
+    
+    z_vec = np.array(z_vec)
+    h_vec = np.array(h_vec)
+    
     # Pierwsze 7000 - nałożone prawdziwe pozycja z [train part]
-    fig, axs = plt.subplots(3, 1, figsize=(5, 5))
-    axs[0].plot(data['Time'], pred_roll, label="Roll prediction")
-    axs[0].plot(data_train['Time'], data_train['roll'], label="Roll actual")
-    axs[0].legend()
-    axs[0].grid()
+    fig, axs = plt.subplots(3, 2, figsize=(12, 5))
+    axs[0,0].plot(data['Time'], pred_roll, label="Roll prediction")
+    axs[0,0].plot(data_train['Time'], data_train['roll'], label="Roll actual")
+    axs[0,0].legend()
+    axs[0,0].grid()
 
-    axs[1].plot(data['Time'], pred_pitch, label="Pitch prediction")
-    axs[1].plot(data_train['Time'], data_train['pitch'], label="Pitch actual")
-    axs[1].legend()
-    axs[1].grid()
+    axs[1,0].plot(data['Time'], pred_pitch, label="Pitch prediction")
+    axs[1,0].plot(data_train['Time'], data_train['pitch'], label="Pitch actual")
+    axs[1,0].legend()
+    axs[1,0].grid()
 
-    axs[2].plot(data['Time'], pred_yaw, label="Yaw prediction")
-    axs[2].plot(data_train['Time'], data_train['yaw'], label="Yaw actual")
-    axs[2].legend()
-    axs[2].grid()
+    axs[2,0].plot(data['Time'], pred_yaw, label="Yaw prediction")
+    axs[2,0].plot(data_train['Time'], data_train['yaw'], label="Yaw actual")
+    axs[2,0].legend()
+    axs[2,0].grid()
+    
+    axs[0,1].plot(data['Time'], h_vec[:,0], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  X", zorder=10)
+    axs[0,1].plot(data['Time'], z_vec[:,0], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  X")
+    axs[0,1].legend()
+    axs[0,1].grid()
+
+    axs[1,1].plot(data['Time'], h_vec[:,1], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  Y", zorder=10)
+    axs[1,1].plot(data['Time'], z_vec[:,1], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  Y")
+    axs[1,1].legend()
+    axs[1,1].grid()
+
+    axs[2,1].plot(data['Time'], h_vec[:,2], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  Z", zorder=10)
+    axs[2,1].plot(data['Time'], z_vec[:,2], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  Z")
+    axs[2,1].legend()
+    axs[2,1].grid()
+
+    
     fig.tight_layout()
     plt.show()
