@@ -251,6 +251,58 @@ def get_F(x, angular_velocities, dt):
     ])
 
 
+def h(x):
+    # Ekstrakcja kwaternionu
+    q = x[0:4]
+
+    # Macierz obrotu - układ odniesienie obiektu (body)
+    R_from_body = quaternion_to_rotation_matrix(q)
+
+    # Konwersja wektora grawitacji układu-otoczenia do układu-obiektu
+    # return R_from_body.T @ np.c_[[0, 0, -GRAVITY]]
+    return R_from_body.T @ np.c_[[0, 0, 1]]
+
+
+def get_H(x):
+    """
+    Zwraca Jakobian funkcji h()
+    """
+    qw, qx, qy, qz = x.flat[0:4]
+
+    H = 2 * (-1) * np.array([    #(-1) for gravity flip
+        [ qy, -qz,  qw, -qx, 0, 0, 0],
+        [-qx, -qw, -qz, -qy, 0, 0, 0],
+        [-qw,  qx,  qy, -qz, 0, 0, 0]
+    ])
+    # return 2 * GRAVITY * np.array([
+    #     [ qy, -qz,  qw, -qx, 0, 0, 0],
+    #     [-qx, -qw, -qz, -qy, 0, 0, 0],
+    #     [-qw,  qx,  qy, -qz, 0, 0, 0]
+    # ])
+
+    # q_w, q_x, q_y, q_z = x.flat[0:4]
+    # g_x, g_y, g_z = [0, 0, 1]
+
+    # H_00 = g_x*q_w + g_y*q_z - g_z*q_y
+    # H_01 = g_x*q_x + g_y*q_y + g_z*q_z
+    # H_02 = -g_x*q_y + g_y*q_x - g_z*q_w
+    # H_03 = -g_x*q_z + g_y*q_w + g_z*q_x
+
+    # H_10 = -g_x*q_z + g_y*q_w + g_z*q_x
+    # H_11 = g_x*q_y - g_y*q_x + g_z*q_w
+    # H_12 = g_x*q_x + g_y*q_y + g_z*q_z
+    # H_13 = -g_x*q_w - g_y*q_z + g_z*q_y
+
+    # H_20 = g_x*q_y - g_y*q_x + g_z*q_w
+    # H_21 = g_x*q_z - g_y*q_w - g_z*q_x
+    # H_22 = g_x*q_w + g_y*q_z - g_z*q_y
+    # H_23 = g_x*q_x + g_y*q_y + g_z*q_z
+
+    # H = 2 * np.array([[H_00, H_01, H_02, H_03, 0, 0, 0],
+    #                   [H_10, H_11, H_12, H_13, 0, 0, 0],
+    #                   [H_20, H_21, H_22, H_23, 0, 0, 0]])
+    return H
+
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
                  init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
