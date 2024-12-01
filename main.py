@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
 
-    s1 = 0.0000001
+    s1 = 0.002
     s2 = 0.0001
 
     # gyro_noise = np.diag(np.append(gyro_vars, [s1 ** 2])) * 4e-2  # *(dt**2/4)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
               delta_t=dt,
               init_gyro_bias_err=0.1,
               gyro_noises=gyro_vars,
-              gyro_bias_noises=[0.002,0.002,0.002],
+              gyro_bias_noises=[s1,s1,s1],
               accelerometer_noises=acc_vars)
 
     pred = []
