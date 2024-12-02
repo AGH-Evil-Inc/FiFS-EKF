@@ -330,7 +330,7 @@ class EKF:
         # Macierz kowariancji P [7x7]
         self.P = np.identity(7) # zainicjalizowana czymkolwiek
         # - Część kwaternionowa (orientacji/obrotu/pozycji)
-        self.P[0:4, 0:4] = np.identity(4) * 0.01
+        self.P[0:4, 0:4] = np.identity(4) * 0.0   # 0 na start, bo startujemy z pewnej pozycji (0,0,0)
         # - Część biasu żyroskopu
         self.P[4:7, 4:7] = np.identity(3) * (init_gyro_bias_err ** 2)
 
