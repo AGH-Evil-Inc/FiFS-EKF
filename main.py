@@ -25,7 +25,16 @@ if __name__ == '__main__':
 
     acc_bias_x = np.mean(data['AccX'][:calibration_samples])
     acc_bias_y = np.mean(data['AccY'][:calibration_samples])
+    # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - 1
     acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
+
+    # ACC calibration matrix from [./get_calib_parameters.ipynb]
+    acc_calibration_matrix = np.array([
+        [0.9884646573407392,        -0.005196578337050819,  -0.003962203739630031],
+        [-0.015449996787821385,     1.0139083437181962,     -0.041641932456625924],
+        [0.01265817110981942,       0.04266824758539578,     1.0029777251748326  ],
+        [-0.00028401797239294146,   0.0223789880167591,     -0.004273695060949001]
+    ])
 
     acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
 
@@ -63,6 +72,11 @@ if __name__ == '__main__':
     for _, row in data.iterrows():
         gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
         # gyroscope_measurement = np.array([row['GyroX'] - g_bias_x, row['GyroY'] - g_bias_y, row['GyroZ'] - g_bias_z])
+
+        # # Get raw ACC sample
+        # raw_acc_sample = np.array([row['AccX'], row['AccY'], row['AccZ'], 1])    # 1 at the end for correct matrix multiplication
+        # # Calibrate ACC sample
+        # accelerometer_measurement = raw_acc_sample @ acc_calibration_matrix
         accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
         # accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
 
