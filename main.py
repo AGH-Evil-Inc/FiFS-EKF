@@ -23,10 +23,10 @@ if __name__ == '__main__':
     # data['AccX'], data['AccY'] = data['AccY'], data['AccX']
     data['AccZ'] *= GRAVITY
 
-    acc_bias_x = np.mean(data['AccX'][:calibration_samples])
-    acc_bias_y = np.mean(data['AccY'][:calibration_samples])
-    # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - 1
-    acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
+    # acc_bias_x = np.mean(data['AccX'][:calibration_samples])
+    # acc_bias_y = np.mean(data['AccY'][:calibration_samples])
+    # # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - 1
+    # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
 
     # ACC calibration matrix from [./get_calib_parameters.ipynb]
     acc_calibration_matrix = np.array([
@@ -36,7 +36,8 @@ if __name__ == '__main__':
         [-0.00028401797239294146,   0.0223789880167591,     -0.004273695060949001]
     ])
 
-    acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
+    # acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
+    acc_vars = np.array([0.0003883588268739876, 0.0001150916650792601, 0.0007894904718740723])
 
     # Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
     data['GyroX'] *= 0.001 * (np.pi / 180)
@@ -74,10 +75,10 @@ if __name__ == '__main__':
         # gyroscope_measurement = np.array([row['GyroX'] - g_bias_x, row['GyroY'] - g_bias_y, row['GyroZ'] - g_bias_z])
 
         # # Get raw ACC sample
-        # raw_acc_sample = np.array([row['AccX'], row['AccY'], row['AccZ'], 1])    # 1 at the end for correct matrix multiplication
+        raw_acc_sample = np.array([row['AccX'], row['AccY'], row['AccZ'], 1])    # 1 at the end for correct matrix multiplication
         # # Calibrate ACC sample
-        # accelerometer_measurement = raw_acc_sample @ acc_calibration_matrix
-        accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
+        accelerometer_measurement = raw_acc_sample @ acc_calibration_matrix
+        # accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
         # accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
 
         # Predykcja za pomocą żyroskopu
