@@ -14,6 +14,7 @@ if __name__ == '__main__':
     # Komentować zamiennie - tylko [train part] albo [train part]+[entire test]
     # data = data_train
     data = pd.read_csv("data/test.csv")
+    # data = pd.read_csv("data/calib.csv")
 
     calibration_samples = 1000
 
@@ -44,13 +45,18 @@ if __name__ == '__main__':
     data['GyroY'] *= 0.001 * (np.pi / 180)
     data['GyroZ'] *= 0.001 * (np.pi / 180)
 
-    g_bias_x = np.mean(data['GyroX'][:calibration_samples])
-    g_bias_y = np.mean(data['GyroY'][:calibration_samples])
-    g_bias_z = np.mean(data['GyroZ'][:calibration_samples])
+    # g_bias_x = np.mean(data['GyroX'][:calibration_samples])
+    # g_bias_y = np.mean(data['GyroY'][:calibration_samples])
+    # g_bias_z = np.mean(data['GyroZ'][:calibration_samples])
 
-    gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
+    g_bias_x = 0.0012691044958167846
+    g_bias_y = -0.010023475459808865
+    g_bias_z = -0.004176814457081565
 
-    gyro_bias_noice_var = 0.000000005
+    # gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
+    gyro_vars = np.array([7.28055701955744e-07, 3.816278166870234e-07, 3.455531786115578e-07])
+
+    gyro_bias_noice_var = 0.00000000005
     # s2 = 0.0001
 
     # gyro_noise = np.diag(np.append(gyro_vars, [s1 ** 2])) * 4e-2  # *(dt**2/4)
