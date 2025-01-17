@@ -161,24 +161,24 @@ def quaternion_from_rotation_vector(rotation_vector, eps=0):
 
 def get_Q(gyro_noises):
     gyro_noise_x, gyro_noise_y, gyro_noise_z = gyro_noises
-    Q = np.array([[gyro_noise_x**2,               0,               0],
-                  [              0, gyro_noise_y**2,               0],
-                  [              0,               0, gyro_noise_z**2]])
+    Q = np.array([[gyro_noise_x,               0,               0],
+                  [              0, gyro_noise_y,               0],
+                  [              0,               0, gyro_noise_z]])
     return Q
 
 def get_Q_bias(gyro_bias_noises):
     gbn_x, gbn_y, gbn_z = gyro_bias_noises
     Q_bias = np.zeros((7, 7))
-    Q_bias[4:7, 4:7] = np.array([[gbn_x**2,        0,        0],
-                                 [       0, gbn_y**2,        0],
-                                 [       0,        0, gbn_z**2]])
+    Q_bias[4:7, 4:7] = np.array([[gbn_x,        0,        0],
+                                 [       0, gbn_y,        0],
+                                 [       0,        0, gbn_z]])
     return Q_bias
 
 def get_R(accelerometer_noises):
     an_x, an_y, an_z = accelerometer_noises
-    R = np.array([[an_x**2,       0,       0],
-                  [      0, an_y**2,       0],
-                  [      0,       0, an_z**2]])
+    R = np.array([[an_x,       0,       0],
+                  [      0, an_y,       0],
+                  [      0,       0, an_z]])
     return R
 
 def get_W(x, dt):
