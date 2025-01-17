@@ -421,9 +421,9 @@ class EKF:
         z = normalize_vector(accelerations)
         # print("---------------------")
         # print(z.reshape(3))
-        h_temp = h(self.x)
+        h_prediction = h(self.x)
         # print(h_temp.reshape(3))
-        y = z - h_temp
+        y = z - h_prediction
         # y = z - h(self.x)
         H = get_H(self.x)
 
@@ -447,7 +447,7 @@ class EKF:
         #self.x[:4] = normalize_vector(self.x[:4]) # Bez normalizacji pomiar z akcelerometru nie działa poprawnie
         #print(math.sqrt(np.sum(self.x**2)))
 
-        return z.reshape(3), h_temp.reshape(3)
+        return z.reshape(3), h_prediction.reshape(3)
 
     def get_orientation(self):
         return self.x[:4]
