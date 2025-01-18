@@ -264,11 +264,11 @@ q_z = 0\\
 $$
 
 
-### Początkowa wartość estymaty kowariancji stanu $P_0$
+### 3.2. Początkowa wartość estymaty kowariancji stanu $P_0$
 
 Podobnie jak wyżej - z powodu dostosowania do zestawu danych tekstowych z eksperymentu, gdzie na początku czujniki się nie poruszają - ustawiono kowariancje na $0$, ponieważ po kilku krokach czasu na wartości macierzy kowariancji $P$ wpłynęły wartości szumów z $Q$ i $Q_{bias}$
 
-### Wartość macierzy kowariancji procesu $Q$
+### 3.3. Wartość macierzy kowariancji procesu $Q$
 
 Szum procesu jest kombinacją szumu pomiarowego żyroskopu oraz szumu biasu żyroskopu. Szum pomiarowy żyroskopu znamy w postaci szumu każdej z osi, więc macierz $Q_{\text{gyro}}$ musimy przekształcić (za pomocą macierzy $W$) na postać odpowiadającą naszej macierzy stanu - na 
 macierz kowariancji jednostek kwaternionu. Szum procesu wyznaczamy więc za pomocą poniższego wzoru:
@@ -324,7 +324,7 @@ $$
 
 Gdzie $\sigma_{gx}^2, \sigma_{gy}^2, \sigma_{gz}^2$ to wariancje szumu każdej osi żyroskopu, a $\sigma_{bx}^2, \sigma_{by}^2, \sigma_{bz}^2$ to wariancje biasów każdej osi żyroskopu.
 
-### Wartość macierzy kowariancji pomiarów $R$
+### 3.4. Wartość macierzy kowariancji pomiarów $R$
 
 $$
 \begin{align}
@@ -340,12 +340,12 @@ $$
 Gdzie $\sigma_{ax}^2, \sigma_{ay}^2, \sigma_{az}^2$ to wariancje szumu każdej osi akcelerometru.
 
 
-## Wyniki
+## 4. Wyniki
 
 TODO
 
 
-## Bibliografia
+## 5. Bibliografia
 
 - [Cookie Robotics: Quaternion-Based EKF for Attitude and Bias Estimation](https://cookierobotics.com/073/):
   - implementacja EKF z GYRO i ACC (bez MAG),
