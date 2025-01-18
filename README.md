@@ -87,6 +87,7 @@ $$T = R \cdot X$$
 $$R \cdot X = T$$
 
 Ostateczne, wyznaczenie macierzy kalibracji $X$:
+
 $$X = \left(R^T \cdot R\right)^{-1} \cdot R^T \cdot T$$
 
 
