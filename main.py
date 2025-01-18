@@ -49,7 +49,7 @@ if __name__ == '__main__':
     gyro_vars = np.array([7.28055701955744e-07, 3.816278166870234e-07, 3.455531786115578e-07])
 
     # Wariancja biasów GYRO
-    gyro_bias_noice_var = 0.00000000005
+    gyro_bias_noice_var = 0.00000000005 # 5e-11
 
     # Inicjalizacja EKF
     dt = 0.005  # TODO: zmienić na dynamiczne

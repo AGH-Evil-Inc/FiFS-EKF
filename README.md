@@ -3,6 +3,8 @@ Trying to get orientation of an object based on accelerometer and qyroscope meas
 
 ## 1. Kalibracja czujników
 
+TODO: skalowanie do wartości - np. *pi/180/1000
+
 ### GYRO (żyroskop):
 - Wyznaczenie biasów początkowych - wprowadzane do EKF, zmieniane wewnątrz, nie są odejmowane przed,
 - Wyznaczenie wariancji dla każdej osi - wprowadzane do EKF
@@ -172,7 +174,7 @@ Otrzymujemy w ten sposób funkcję przejścia stanu.
 
 $$
 \begin{align}
-f(x, \omega, w) = 
+f(x, \omega) = 
 \begin{bmatrix}
 q_w - \frac{\Delta t}{2} q_x (\omega_x - b_x) - \frac{\Delta t}{2} q_y (\omega_y - b_y) - \frac{\Delta t}{2} q_z (\omega_z - b_z) \\
 q_x + \frac{\Delta t}{2} q_w (\omega_x - b_x) - \frac{\Delta t}{2} q_z (\omega_y - b_y) + \frac{\Delta t}{2} q_y (\omega_z - b_z) \\
@@ -181,7 +183,7 @@ q_z - \frac{\Delta t}{2} q_y (\omega_x - b_x) + \frac{\Delta t}{2} q_x (\omega_y
 b_x \\
 b_y \\
 b_z
-\end{bmatrix} + w
+\end{bmatrix}
 \end{align}
 $$
 
@@ -206,12 +208,12 @@ $$
 
 $$
 \begin{align}
-h(x, v) =
+h(x) =
 \begin{bmatrix}
 -2g ( q_x q_z - q_w q_y ) \\
 -2g ( q_y q_z + q_w q_x ) \\
 -g ( q_w^2 - q_x^2 - q_y^2 + q_z^2 )
-\end{bmatrix} + v
+\end{bmatrix}
 \end{align}
 $$
 
@@ -244,6 +246,7 @@ W przypadku dostępności dobrych danych do kalibracji MAG (magnetometru), do wy
 
 W implementacji początkowa orientacja to $(0, 0, 0)$ (kąty Eulera), czyli $(1, 0, 0, 0)$ (kwaternion). 
 Wynika to z dostosowania implementacji do zestawu danych testowych od prowadzącego, gdzie przez pierszy okres orientacja jest stała, równa $(0, 0, 0)$. Operując w środowisku eksperymentu, podjęto również decyzję o braku estymacji początkowych Roll i Pitch (z Yaw ustawionym na 0) na podstawie samego ACC, gdyż mogłoby to niepotrzebnie zaburzyć działanie EKF, gdzie połączenie ACC i MAG już by zostało zaimplementowane.
+Początkowe wartości biasów są uzyskane z fazy kalibracji czujników.
 
 $$
 \begin{align}
@@ -354,3 +357,5 @@ TODO
 - [AHRS: Extended Kalman Filter](https://ahrs.readthedocs.io/en/latest/filters/ekf.html):
   - implementacja EKF z GYRO, ACC, MAG,
   - wektor stanu $x$ złożony tylko z orientacji w formie kwaternionu
+- Wykłady FiFS
+
