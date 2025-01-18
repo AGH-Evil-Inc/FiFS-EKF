@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - 1
     # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
 
-    # ACC calibration matrix from [./get_calib_parameters.ipynb]
+    # Macierz kalibracyjna ACC z [./get_calib_parameters.ipynb]
     acc_calibration_matrix = np.array([
         [0.9884646573407392,        -0.005196578337050819,  -0.003962203739630031],
         [-0.015449996787821385,     1.0139083437181962,     -0.041641932456625924],
@@ -37,10 +37,11 @@ if __name__ == '__main__':
         [-0.00028401797239294146,   0.0223789880167591,     -0.004273695060949001]
     ])
 
+    # Wariancje ACC z [./get_calib_parameters.ipynb]
     # acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
     acc_vars = np.array([0.0003883588268739876, 0.0001150916650792601, 0.0007894904718740723])
 
-    # Dane z żyroskopu w mdps (mili degrees per second) -> rad/s
+    # Dane z GYRO w mdps (mili degrees per second) -> rad/s
     data['GyroX'] *= 0.001 * (np.pi / 180)
     data['GyroY'] *= 0.001 * (np.pi / 180)
     data['GyroZ'] *= 0.001 * (np.pi / 180)
@@ -49,13 +50,16 @@ if __name__ == '__main__':
     # g_bias_y = np.mean(data['GyroY'][:calibration_samples])
     # g_bias_z = np.mean(data['GyroZ'][:calibration_samples])
 
+    # Biasy GYRO z [./get_calib_parameters.ipynb]
     g_bias_x = 0.0012691044958167846
     g_bias_y = -0.010023475459808865
     g_bias_z = -0.004176814457081565
 
+    # Wariancje GYRO z [./get_calib_parameters.ipynb]
     # gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
     gyro_vars = np.array([7.28055701955744e-07, 3.816278166870234e-07, 3.455531786115578e-07])
 
+    # Wariancja biasów GYRO
     gyro_bias_noice_var = 0.00000000005
     # s2 = 0.0001
 
