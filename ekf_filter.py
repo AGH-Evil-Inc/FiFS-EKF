@@ -263,7 +263,7 @@ def h(x):
 
     # Konwersja wektora grawitacji układu-otoczenia do układu-obiektu
     # return R_from_body.T @ np.c_[[0, 0, -GRAVITY]]
-    return R_from_body.T @ np.c_[[0, 0, 1]]
+    return R_from_body.T @ np.c_[[0, 0, 1]] # (1) for gravity
 
 
 def get_H(x):
@@ -283,6 +283,7 @@ def get_H(x):
     #     [-qw,  qx,  qy, -qz, 0, 0, 0]
     # ])
 
+    # Wersja bez skróconych obliczeń (z wyprowadzenia: https://ahrs.readthedocs.io/en/latest/filters/ekf.html)
     # q_w, q_x, q_y, q_z = x.flat[0:4]
     # g_x, g_y, g_z = [0, 0, 1]
 
@@ -348,7 +349,6 @@ class EKF:
         # [rad/sec]
         self.Q_bias = get_Q_bias(gyro_bias_noises)
 
-        #TODO: przerobić na poniższą (3x3) - gdy porównanie w update() będzie wektorem grawitacji
         # Macierz kowariancji szumu obserwacji (ACC) [3x3]
         # Przemnażana w korekcji przez V
         # [m/s^2]
@@ -375,7 +375,7 @@ class EKF:
             angular_velocities (List[wx, wy, wz]): Prędkości kątowe GYRO [rad/sec]
             dt (float): krok czasu [sec] TODO: dodać
         """
-        # Prędkości kątowe na wektor pionowy
+        # Prędkości kątowe na wektor pionowy [3x1]
         angular_velocities = np.c_[angular_velocities]
 
         # Macierz F - Jakobian z f() [7x7]
@@ -396,56 +396,67 @@ class EKF:
         #               [0, 0, 0, 0, 0, 0, 0],
         #               [0, 0, 0, 0, 0, 0, 0]])
         
-        # Macierz W do przekształcenia Q procesu [prędkości x,y,z] -> [kwaternion]
+        # Macierz W do przekształcenia Q procesu [prędkości x,y,z] -> [kwaternion] [7x3]
         W = get_W(self.x, self.dt)
 
-        # Obliczamy nowy stan (a w zasadzie jego predykcję)
-        # self.x += A @ self.x
-        # self.x[0:4] = normalize_vector(self.x[0:4]) # TODO: użyć? Normalizacja w celu uniknięcia błędów komputera
-
-        # Obliczamy predykcję stanu
+        # Obliczamy predykcję stanu [kwaternion+biasy, 7x1]
         self.x = f(self.x, angular_velocities, self.dt)
 
-        # Przewidujemy macierz kowariancji
+        # Przewidujemy macierz kowariancji [7x7]
         # self.P = A @ self.P @ A.T + W @ self.Q @ W.T + self.Q_bias
         self.P = F @ self.P @ F.T + W @ self.Q @ W.T + self.Q_bias
 
     def update(self, accelerations):
+        """
+        Korekcja EKF - użyty ACC (akcelerometr) jako obserwacja
+
+        Parameters:
+            accelerations (List[ax, ay, az]): Przyspieszenia z akcelerometru [m/s^2]
+            dt (float): krok czasu [sec] TODO: dodać
+        """
+
         # state_rot_mat = quaternion_to_rotation_matrix(self.x[:4]) # Macierz rotacji stanu
         # acc_predict_vec = state_rot_mat.T @ np.array([0, 0, GRAVITY]) # Przewidywany pomiar akcelerometru
         # e_vec = accelerations - acc_predict_vec.reshape(3) # Różnica wektora zmierzonego i przewidzianego
         # e = np.array([0, e_vec[0], e_vec[1], e_vec[2]]).reshape((4, 1)) # Na kwaternion
 
+        # Pozyskanie pomiaru z ACC [3x1]
         accelerations = np.c_[accelerations]
         # z = GRAVITY * normalize_vector(accelerations)
         z = normalize_vector(accelerations)
         # print("---------------------")
         # print(z.reshape(3))
+        # Predykcja pomiaru ACC na podstawie stanu [3x1]
         h_prediction = h(self.x)
         # print(h_temp.reshape(3))
+        # Innowacja - różnica między predykcją a pomiarem ACC [3x1]
+        # porównywanie w postaci wektora grawitacji
         y = z - h_prediction
         # y = z - h(self.x)
+        # Macierz H - Jakobian z h() [3x7]
         H = get_H(self.x)
 
         # S = self.C @ self.P @ self.C.T + self.R
         # K = self.P @ self.C.T @ np.linalg.inv(S) # Wzmocnienie Kalmana
+        # Macierz kowariancji innowacji [3x3]
         S = H @ self.P @ H.T + self.R
-        K = (self.P @ H.T) @ np.linalg.inv(S) # Wzmocnienie Kalmana
+        # Wzmocnienie Kalmana [7x3]
+        K = (self.P @ H.T) @ np.linalg.inv(S)
 
-        # Aktualizacja wektora stanu i kowariancji (kwaternionowo)
+        # Aktualizacja wektora stanu (kwaternionowo)
+        # na razie nie działa :/
         # k_temp = (K @ y)
         # k_temp[:4] = normalize_vector(k_temp[:4])
         # self.x[:4] = quaternion_multiply(self.x[:4], k_temp[:4])
         # self.x[4:] = self.x[4:] + k_temp[4:]
 
-        # Aktualizacja wektora stanu i kowariancji
+        # Aktualizacja wektora stanu
         self.x = self.x + (K @ y)
-        self.x[:4] = normalize_vector(self.x[0:4])
+        self.x[:4] = normalize_vector(self.x[0:4])  # Normalizacja kwaternionu, wynika z dodawania zamiast mnożenia
+
+        # Aktualizacja macierzy kowariancji [7x7]
         # self.P = (np.eye(7) - K @ self.C) @ self.P
         self.P = (np.eye(7) - K @ H) @ self.P
-
-        #self.x[:4] = normalize_vector(self.x[:4]) # Bez normalizacji pomiar z akcelerometru nie działa poprawnie
-        #print(math.sqrt(np.sum(self.x**2)))
 
         return z.reshape(3), h_prediction.reshape(3)
 
