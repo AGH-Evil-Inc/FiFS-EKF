@@ -450,5 +450,14 @@ class EKF:
         return z.reshape(3), h_prediction.reshape(3)
 
     def get_orientation(self):
-        return self.x[:4]
+        return self.x[:4].reshape(4)
+    
+    def get_orientation_std(self):
+        return np.sqrt(np.diag(self.P)[0:4])
+    
+    def get_gyro_biases(self):
+        return self.x[4:].reshape(3)
+    
+    def get_gyro_bias_std(self):
+        return np.sqrt(np.diag(self.P)[4:7])
     

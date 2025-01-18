@@ -71,11 +71,16 @@ if __name__ == '__main__':
               gyro_noises=gyro_vars,
               gyro_bias_noises=[gyro_bias_noice_var,gyro_bias_noice_var,gyro_bias_noice_var],
               accelerometer_noises=acc_vars)
-
-    pred = []
-
+    
+    # Puste listy na historię
+    quaternion_prediction_history = []
+    quaternion_prediction_std_history = []
+    orientation_prediction_history = []
+    gyro_bias_history = []
+    gyro_bias_std_history = []
     z_vec = []
     h_vec = []
+
     for _, row in data.iterrows():
         gyroscope_measurement = np.array([row['GyroX'], row['GyroY'], row['GyroZ']])
         # gyroscope_measurement = np.array([row['GyroX'] - g_bias_x, row['GyroY'] - g_bias_y, row['GyroZ'] - g_bias_z])
@@ -93,24 +98,27 @@ if __name__ == '__main__':
         # Korekcja za pomocą akcelerometru
         z, h = ekf.update(accelerometer_measurement)
 
+        # Wartości historyczne
         z_vec.append(z)
         h_vec.append(h)
+        orientation_prediction_history.append(quaternion_to_euler(ekf.get_orientation()))
+        quaternion_prediction_history.append(ekf.get_orientation())
+        quaternion_prediction_std_history.append(ekf.get_orientation_std())
+        gyro_bias_history.append(ekf.get_gyro_biases())
+        gyro_bias_std_history.append(ekf.get_gyro_bias_std())
 
-        orientation_euler = quaternion_to_euler(ekf.get_orientation())
-        pred.append(orientation_euler)
 
     # Pracujemy na radianach, plotuję w kątach
-    pred_roll = np.unwrap([p[0] * 180 / np.pi for p in pred])
-    pred_pitch = np.unwrap([p[1] * 180 / np.pi for p in pred])
-    pred_yaw = np.unwrap([p[2] * 180 / np.pi for p in pred])
+    pred_roll = np.unwrap([p[0] * 180 / np.pi for p in orientation_prediction_history])
+    pred_pitch = np.unwrap([p[1] * 180 / np.pi for p in orientation_prediction_history])
+    pred_yaw = np.unwrap([p[2] * 180 / np.pi for p in orientation_prediction_history])
 
+    # Zapis wyników do pliku
     l = len(pred_roll)
     result_df = pd.DataFrame(
         data={'Id': list(range(1, l + 1)), 'pitch': pred_pitch, 'roll': pred_roll, 'yaw': pred_yaw})
     print(result_df.head())
-
     result_df.to_csv("results/submission.csv", index=False)
-
 
     # MSE (Mean Square Error)
     # Liczone tylko dla [train part] (piersze 7000)
@@ -128,42 +136,72 @@ if __name__ == '__main__':
     print(f"     7000    | {mse_7_roll:9.6f} | {mse_7_pitch:9.6f} | {mse_7_yaw:9.6f} | {mse_7_mean:.6f}")
     print(f"     5000    | {mse_5_roll:9.6f} | {mse_5_pitch:9.6f} | {mse_5_yaw:9.6f} | {mse_5_mean:.6f}")
 
-    
+    # Konwersja na np.array, aby działało w wykresach
     z_vec = np.array(z_vec)
     h_vec = np.array(h_vec)
+    quaternion_prediction_history = np.array(quaternion_prediction_history)
+    quaternion_prediction_std_history = np.array(quaternion_prediction_std_history)
+    gyro_bias_history = np.array(gyro_bias_history)
+    gyro_bias_std_history = np.array(gyro_bias_std_history)
     
+
+
+    # Wykresy predykcji i porównanie z rzeczywistymi danymi
     # Pierwsze 7000 - nałożone prawdziwe pozycja z [train part]
     fig, axs = plt.subplots(3, 2, figsize=(12, 5))
-    axs[0,0].plot(data['Time'], pred_roll, label="Roll prediction")
-    axs[0,0].plot(data_train['Time'], data_train['roll'], label="Roll actual")
-    axs[0,0].legend()
-    axs[0,0].grid()
+    labels = ["Roll", "Pitch", "Yaw"]
+    for i, label in enumerate(labels):
+        axs[i, 0].plot(data['Time'], eval(f"pred_{label.lower()}"), label=f"{label} prediction")
+        axs[i, 0].plot(data_train['Time'], data_train[label.lower()], label=f"{label} actual")
+        axs[i, 0].legend()
+        axs[i, 0].grid()
 
-    axs[1,0].plot(data['Time'], pred_pitch, label="Pitch prediction")
-    axs[1,0].plot(data_train['Time'], data_train['pitch'], label="Pitch actual")
-    axs[1,0].legend()
-    axs[1,0].grid()
+    acc_labels = ["X", "Y", "Z"]
+    for i, label in enumerate(acc_labels):
+        axs[i, 1].plot(data['Time'], h_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"Predykcja ACC {label}", zorder=10)
+        axs[i, 1].plot(data['Time'], z_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"Pomiar ACC {label}")
+        axs[i, 1].legend()
+        axs[i, 1].grid()
 
-    axs[2,0].plot(data['Time'], pred_yaw, label="Yaw prediction")
-    axs[2,0].plot(data_train['Time'], data_train['yaw'], label="Yaw actual")
-    axs[2,0].legend()
-    axs[2,0].grid()
-    
-    axs[0,1].plot(data['Time'], h_vec[:,0], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  X", zorder=10)
-    axs[0,1].plot(data['Time'], z_vec[:,0], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  X")
-    axs[0,1].legend()
-    axs[0,1].grid()
-
-    axs[1,1].plot(data['Time'], h_vec[:,1], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  Y", zorder=10)
-    axs[1,1].plot(data['Time'], z_vec[:,1], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  Y")
-    axs[1,1].legend()
-    axs[1,1].grid()
-
-    axs[2,1].plot(data['Time'], h_vec[:,2], marker='.', markersize=1, linewidth=0.5, label="Predykcja ACC  Z", zorder=10)
-    axs[2,1].plot(data['Time'], z_vec[:,2], marker='.', markersize=1, linewidth=0.5, label="Pomiar ACC  Z")
-    axs[2,1].legend()
-    axs[2,1].grid()
-
-    
     fig.tight_layout()
+
+
+    # Wykres dla biasów i kwaternionów
+    fig2, axs2 = plt.subplots(4, 2, figsize=(12, 5))
+    gyro_bias_labels = ["X", "Y", "Z"]
+    for i, label in enumerate(gyro_bias_labels):
+        axs2[i,0].plot(data['Time'], gyro_bias_history[:,i], marker='.', markersize=1, linewidth=0.5, label=f"Bias GYRO {label}", zorder=10)
+        axs2[i,0].fill_between(data['Time'],
+                              gyro_bias_history[:,i] - gyro_bias_std_history[:,i],
+                              gyro_bias_history[:,i] + gyro_bias_std_history[:,i],
+                              color='gray', alpha=0.5, label=f"Odch. std. bias GYRO {label}")
+        axs2[i,0].legend()
+        axs2[i,0].grid()
+
+    axs2[3,0].axis('off')
+
+    # to samo co dla gyro_bias_history, ale dla quaternion_prediction_history:
+    std_dev_color = 'tab:red'
+    axs2_q = [axs2[i, 1].twinx() for i in range(4)]
+    quaternion_labels = ["W", "X", "Y", "Z"]
+    for i, label in enumerate(quaternion_labels):
+        axs2[i, 1].plot(data['Time'], quaternion_prediction_history[:, (i+3) % 4], marker='.', markersize=1, linewidth=0.5, label=f"Quaternion {label}", zorder=10)
+        axs2[i, 1].fill_between(data['Time'],
+                                quaternion_prediction_history[:, (i+3) % 4] - quaternion_prediction_std_history[:, (i+3) % 4],
+                                quaternion_prediction_history[:, (i+3) % 4] + quaternion_prediction_std_history[:, (i+3) % 4],
+                                color='gray', alpha=0.5, label=f"Odch. std. Quaternion {label}")
+        axs2[i, 1].legend()
+        axs2[i, 1].grid()
+        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Odch. std. Quaternion {label}")
+        axs2_q[i].set_ylabel('Odch. std.', color=std_dev_color)
+        axs2_q[i].tick_params(axis='y', labelcolor=std_dev_color)
+
+    axs2_q = [axs2[i, 1].twinx() for i in range(4)]
+    for i, label in enumerate(["W", "X", "Y", "Z"]):
+        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Odch. std. Quaternion {label}")
+        axs2_q[i].set_ylabel('Odch. std.', color=std_dev_color)
+        axs2_q[i].tick_params(axis='y', labelcolor=std_dev_color)
+
+    fig2.tight_layout()
+
     plt.show()
