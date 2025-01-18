@@ -308,7 +308,7 @@ def get_H(x):
 
 class EKF:
     def __init__(self, q0=[1,0,0,0], b0=[0,0,0], delta_t=0.005, 
-                 init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
+                 init_gyro_quat_err=0.1, init_gyro_bias_err=0.1, gyro_noises=[0.015,0.015,0.015], gyro_bias_noises=[0.002,0.002,0.002],
                  accelerometer_noises=[0.002, 0.002, 0.002]):
         """
         Inicjalizacja EKF (Extended Kalman Filer)
@@ -330,7 +330,7 @@ class EKF:
         # Macierz kowariancji P [7x7]
         self.P = np.identity(7) # zainicjalizowana czymkolwiek
         # - Część kwaternionowa (orientacji/obrotu/pozycji)
-        self.P[0:4, 0:4] = np.identity(4) * 0.0   # 0 na start, bo startujemy z pewnej pozycji (0,0,0)
+        self.P[0:4, 0:4] = np.identity(4) * init_gyro_quat_err   # 0 na start, bo startujemy z pewnej pozycji (0,0,0)
         # - Część biasu żyroskopu
         self.P[4:7, 4:7] = np.identity(3) * (init_gyro_bias_err ** 2)
 

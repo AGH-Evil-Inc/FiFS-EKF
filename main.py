@@ -62,12 +62,13 @@ if __name__ == '__main__':
     # gyro_noise = np.diag(np.append(gyro_vars, [s1 ** 2])) * 4e-2  # *(dt**2/4)
     # acc_noise = np.diag(np.append(acc_vars, [s2 ** 2]))
 
-    dt = 0.005
-    ekf = EKF(q0=[1, 0, 0, 0],
+    # Inicjalizacja EKF
+    dt = 0.005  # TODO: zmienić na dynamiczne
+    ekf = EKF(q0=[1, 0, 0, 0],  # początkowa orientacja - znana (0,0,0)
               b0=[g_bias_x, g_bias_y, g_bias_z],
-            #   b0=[0,0,0],
               delta_t=dt,
-              init_gyro_bias_err=0.0,   # 0 na start, bo startujemy z pewnej pozycji (0,0,0)
+              init_gyro_quat_err=0.0,   # 0 na start, bo startujemy z pewnej orientacji (0,0,0)
+              init_gyro_bias_err=0.0,   # 0 na start, bo startujemy z pewnej orientacji (0,0,0), stabilnej (bez ruchu)
               gyro_noises=gyro_vars,
               gyro_bias_noises=[gyro_bias_noice_var,gyro_bias_noice_var,gyro_bias_noice_var],
               accelerometer_noises=acc_vars)
