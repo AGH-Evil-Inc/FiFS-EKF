@@ -21,13 +21,8 @@ if __name__ == '__main__':
     # Dane z akcelerometru w g -> m/s^2
     data['AccX'] *= GRAVITY
     data['AccY'] *= GRAVITY
-    # data['AccX'], data['AccY'] = data['AccY'], data['AccX']
     data['AccZ'] *= GRAVITY
 
-    # acc_bias_x = np.mean(data['AccX'][:calibration_samples])
-    # acc_bias_y = np.mean(data['AccY'][:calibration_samples])
-    # # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - 1
-    # acc_bias_z = np.mean(data['AccZ'][:calibration_samples]) - GRAVITY
 
     # Macierz kalibracyjna ACC z [./get_calib_parameters.ipynb]
     acc_calibration_matrix = np.array([
@@ -38,7 +33,6 @@ if __name__ == '__main__':
     ])
 
     # Wariancje ACC z [./get_calib_parameters.ipynb]
-    # acc_vars = np.var(data[['AccX', 'AccY', 'AccZ']][:calibration_samples], axis=0)
     acc_vars = np.array([0.0003883588268739876, 0.0001150916650792601, 0.0007894904718740723])
 
     # Dane z GYRO w mdps (mili degrees per second) -> rad/s
@@ -46,25 +40,16 @@ if __name__ == '__main__':
     data['GyroY'] *= 0.001 * (np.pi / 180)
     data['GyroZ'] *= 0.001 * (np.pi / 180)
 
-    # g_bias_x = np.mean(data['GyroX'][:calibration_samples])
-    # g_bias_y = np.mean(data['GyroY'][:calibration_samples])
-    # g_bias_z = np.mean(data['GyroZ'][:calibration_samples])
-
     # Biasy GYRO z [./get_calib_parameters.ipynb]
     g_bias_x = 0.0012691044958167846
     g_bias_y = -0.010023475459808865
     g_bias_z = -0.004176814457081565
 
     # Wariancje GYRO z [./get_calib_parameters.ipynb]
-    # gyro_vars = np.var(data[['GyroX', 'GyroY', 'GyroZ']][:calibration_samples], axis=0)
     gyro_vars = np.array([7.28055701955744e-07, 3.816278166870234e-07, 3.455531786115578e-07])
 
     # Wariancja biasów GYRO
     gyro_bias_noice_var = 0.00000000005
-    # s2 = 0.0001
-
-    # gyro_noise = np.diag(np.append(gyro_vars, [s1 ** 2])) * 4e-2  # *(dt**2/4)
-    # acc_noise = np.diag(np.append(acc_vars, [s2 ** 2]))
 
     # Inicjalizacja EKF
     dt = 0.005  # TODO: zmienić na dynamiczne
@@ -94,8 +79,6 @@ if __name__ == '__main__':
         raw_acc_sample = np.array([row['AccX'], row['AccY'], row['AccZ'], 1])    # 1 at the end for correct matrix multiplication
         # # Calibrate ACC sample
         accelerometer_measurement = raw_acc_sample @ acc_calibration_matrix
-        # accelerometer_measurement = np.array([row['AccX'] - acc_bias_x, row['AccY'] - acc_bias_y, row['AccZ'] - acc_bias_z])
-        # accelerometer_measurement = np.array([row['AccX'], row['AccY'], row['AccZ']])
 
         # Predykcja za pomocą żyroskopu
         ekf.predict(gyroscope_measurement)
