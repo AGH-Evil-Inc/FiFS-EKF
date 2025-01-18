@@ -8,6 +8,7 @@ Trying to get orientation of an object based on accelerometer and qyroscope meas
 - Wyznaczenie wariancji dla każdej osi - wprowadzane do EKF
 ### ACC (akcelerometr):
 Wyznaczenie macierzy kalibracyjnej (skala i biasy):
+
 $$
 \underbrace{
 \begin{bmatrix}
@@ -15,44 +16,41 @@ x_{\text{calibrated}} \\
 y_{\text{calibrated}} \\
 z_{\text{calibrated}}
 \end{bmatrix}
-}_{b_{calibrated}}
-=
-\underbrace{
+}\_{b\_{calibrated}} = \underbrace{
 \begin{bmatrix}
 a & b & c \\
 d & e & f \\
 g & h & i
 \end{bmatrix}
-}_{C_{params}}
+}\_{C\_{params}}
 \underbrace{
 \begin{bmatrix}
 x_{\text{raw}} \\
 y_{\text{raw}} \\
 z_{\text{raw}}
 \end{bmatrix}
-}_{b_{raw}}
-+
-\underbrace{
+}\_{b\_{raw}} + \underbrace{
 \begin{bmatrix}
 j \\
 k \\
 l
 \end{bmatrix}
-}_{b_{biases}}
+}\_{b\_{biases}}
 $$
+
 ...przepisane (metoda na uzyskiwanie wartości skalibrowanych z surowych danych, pojedynczym przemnożeniem):
+
+
 $$
 \underbrace{
 \begin{bmatrix}
 x_{\text{calibrated}} & y_{\text{calibrated}} & z_{\text{calibrated}}
 \end{bmatrix}
-}_{b_{calibrated}}
-=
-\underbrace{
+}\_{b_{calibrated}} = \underbrace{
 \begin{bmatrix}
 x_{\text{raw}} & y_{\text{raw}} & z_{\text{raw}} & 1
 \end{bmatrix}
-}_{b_{raw} \& 1}
+}\_{b_{raw} \\& 1}
 \underbrace{
 \begin{bmatrix}
 a & d & g \\
@@ -60,7 +58,7 @@ b & e & h \\
 c & f & i \\
 j & k & l
 \end{bmatrix}
-}_{X = C_{params} \& b_{biases}}
+}\_{X = C_{params} \\& b_{biases}}
 $$
 
 $$x_{true} := x_{calibrated}$$
@@ -104,10 +102,9 @@ Gdyby był użyty - kalibracja metodą optymalizacji parametrycznej:
 
 ### 2.1. Wektor stanu $x$ - równanie
 
-$
+$$
 \begin{align}
-x =
-\begin{bmatrix}
+x = \begin{bmatrix}
 q_w \\
 q_x \\
 q_y \\
@@ -117,7 +114,7 @@ b_y \\
 b_z
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Wektor ma wymiary $7 \times 1$, a każda z wartości jest jednowymiarowa. Wartości oznaczone przez $q$ to jednostki kwaternionu opisującego aktualny obrót badanego obiektu w przestrzeni, a wartości oznaczone przez $b$ to biasy żyroskopu w każdej z mierzonych osi. Teoretycznie wektor mógłby być dwuelementowy, zawierający czterowymiarowy kwaternion i trójwymiarowy wektor biasu.
 
@@ -127,53 +124,53 @@ Predykcja stanu aktualizuje tylko 4 pierwsze elementy wektora stanu (kwaterniona
 
 Na podstawie prędkości kątowej ($\omega$) odczytanej z żyroskopu, oraz biasów ($b$) zawartych w 3 ostatnich elementach wektora stanu ($x$), wyznaczamy zmianę wektora rotacji w danej jednostce czasu.
 
-$
+$$
 \begin{align}
 \Delta \vec{\theta} = (\vec{\omega} - \vec{b}) \Delta t
 \end{align}
-$
+$$
 
 Zmieniamy reprezentację wektora zmiany rotacji na postać kwaternionu.
 
-$
+$$
 \begin{align}
 \hat{u} = \frac{\Delta \vec{\theta}}{|\Delta \vec{\theta}|}
 \end{align}
-$
+$$
 
-$
+$$
 \begin{align}
 \Delta q = 
 \begin{bmatrix}
 \cos(\frac{|\Delta \vec{\theta}|}{2}), \hat{u} \sin(\frac{|\Delta \vec{\theta}|}{2})
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Przewidujemy stan "obracając" aktualny kwaternion rotacji przez wyznaczoną powyżej zmianę ($\otimes$ - mnożenie kwaternionów). W praktyce po prostu nacałkowujemy prędkość kątową odczytaną z żyroskopu. $q$ to kwaternion złożony z 4 pierwszych elementów wektora stanu.
 
-$
+$$
 \begin{align}
 q_{k+1} = q_k \otimes \Delta q
 \end{align}
-$
+$$
 
 ### 2.3. Macierz przejścia stanu $F$ (linearyzacja):
 
 W przypadku bardzo małych zmian kąta $\theta$ zmianę kwaternionu można przybliżyć.
 
-$
+$$
 \begin{align}
 \Delta q \approx 
 \begin{bmatrix}
 1, \frac{|\Delta \vec{\theta}|}{2} \hat{u}
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Otrzymujemy w ten sposób funkcję przejścia stanu.
 
-$
+$$
 \begin{align}
 f(x, \omega, w) = 
 \begin{bmatrix}
@@ -186,11 +183,11 @@ b_y \\
 b_z
 \end{bmatrix} + w
 \end{align}
-$
+$$
 
 Macierz przejścia stanu F jest jakobianem powyższej funkcji.
 
-$
+$$
 \begin{align}
 F =
 \begin{bmatrix}
@@ -203,11 +200,11 @@ F =
 0 & 0 & 0 & 0 & 0 & 0 & 1
 \end{bmatrix}
 \end{align}
-$
+$$
 
 ### 2.4. Model pomiarowy $h(x)$ w filtrze
 
-$
+$$
 \begin{align}
 h(x, v) =
 \begin{bmatrix}
@@ -216,7 +213,7 @@ h(x, v) =
 -g ( q_w^2 - q_x^2 - q_y^2 + q_z^2 )
 \end{bmatrix} + v
 \end{align}
-$
+$$
 
 Gdzie jednostki $q_w, q_x, q_y, q_z$ to 4 pierwsze elementy wektora stanu $x$, a g to stała grawitacji.
 
@@ -224,7 +221,7 @@ Naszą obserwacją jest wektor będący przewidywanym teoretycznym odczytem pomi
 
 ### 2.5. Macierz modelu pomiarowego $H$ (linearyzacja):
 
-$
+$$
 \begin{align}
 H = 2g
 \begin{bmatrix}
@@ -233,7 +230,7 @@ q_y & -q_z & q_w & -q_x & 0 & 0 & 0 \\
 -q_w & q_x & q_y & -q_z & 0 & 0 & 0
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Macierz H jest jakobianem funkcji obserwacji h.
 
@@ -248,7 +245,7 @@ W przypadku dostępności dobrych danych do kalibracji MAG (magnetometru), do wy
 W implementacji początkowa orientacja to $(0, 0, 0)$ (kąty Eulera), czyli $(1, 0, 0, 0)$ (kwaternion). 
 Wynika to z dostosowania implementacji do zestawu danych testowych od prowadzącego, gdzie przez pierszy okres orientacja jest stała, równa $(0, 0, 0)$. Operując w środowisku eksperymentu, podjęto również decyzję o braku estymacji początkowych Roll i Pitch (z Yaw ustawionym na 0) na podstawie samego ACC, gdyż mogłoby to niepotrzebnie zaburzyć działanie EKF, gdzie połączenie ACC i MAG już by zostało zaimplementowane.
 
-$
+$$
 \begin{align}
 \hat{x}_0 =
 \begin{bmatrix}
@@ -261,7 +258,7 @@ q_z = 0\\
 {b_z}_0
 \end{bmatrix}
 \end{align}
-$
+$$
 
 
 ### Początkowa wartość estymaty kowariancji stanu $P_0$
@@ -273,15 +270,15 @@ Podobnie jak wyżej - z powodu dostosowania do zestawu danych tekstowych z ekspe
 Szum procesu jest kombinacją szumu pomiarowego żyroskopu oraz szumu biasu żyroskopu. Szum pomiarowy żyroskopu znamy w postaci szumu każdej z osi, więc macierz $Q_{\text{gyro}}$ musimy przekształcić (za pomocą macierzy $W$) na postać odpowiadającą naszej macierzy stanu - na 
 macierz kowariancji jednostek kwaternionu. Szum procesu wyznaczamy więc za pomocą poniższego wzoru:
 
-$
+$$
 \begin{align}
 Q = WQ_{\text{gyro}}W^T + Q_{\text{bias}}
 \end{align}
-$
+$$
 
 Gdzie:
 
-$
+$$
 \begin{align}
 Q_{\text{gyro}} =
 \begin{bmatrix}
@@ -290,9 +287,9 @@ Q_{\text{gyro}} =
 0 & 0 & \sigma_{gz}^2
 \end{bmatrix}
 \end{align}
-$
+$$
 
-$
+$$
 \begin{align}
 W = \frac{\Delta t}{2}
 \begin{bmatrix}
@@ -305,9 +302,9 @@ q_z & q_w & -q_x \\
 0 & 0 & 0
 \end{bmatrix}
 \end{align}
-$
+$$
 
-$
+$$
 \begin{align}
 Q_{\text{bias}} =
 \begin{bmatrix}
@@ -320,13 +317,13 @@ Q_{\text{bias}} =
 0 & 0 & 0 & 0 & 0 & 0 & \sigma_{bz}^2
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Gdzie $\sigma_{gx}^2, \sigma_{gy}^2, \sigma_{gz}^2$ to wariancje szumu każdej osi żyroskopu, a $\sigma_{bx}^2, \sigma_{by}^2, \sigma_{bz}^2$ to wariancje biasów każdej osi żyroskopu.
 
 ### Wartość macierzy kowariancji pomiarów $R$
 
-$
+$$
 \begin{align}
 R =
 \begin{bmatrix}
@@ -335,7 +332,7 @@ R =
 0 & 0 & \sigma_{az}^2
 \end{bmatrix}
 \end{align}
-$
+$$
 
 Gdzie $\sigma_{ax}^2, \sigma_{ay}^2, \sigma_{az}^2$ to wariancje szumu każdej osi akcelerometru.
 
