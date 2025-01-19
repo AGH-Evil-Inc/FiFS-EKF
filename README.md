@@ -1,6 +1,14 @@
 # GyroAccKalmanFilter
 Trying to get orientation of an object based on accelerometer and qyroscope measurments
 
+## Wstęp
+
+Celem projektu była predykcja orientacji i jej zmian w czasie na podstawie dostępnych pomiarów z GYRO (żyroskop), ACC (akcelerometr) i MAG (magnetometr). Z racji na brak dobrych danych do skalibrowania MAG, implementacja EKF bazuje na użyciu GYRO w predykcji i samego ACC w korekcji.
+
+Wektor stanu modelu składa się z orientacji (w postaci kwaternionu) oraz biasów GYRO (3 wartości, odpowiadające 3 osiom). Jako model pomiarowy przyjęto wyznaczanie predykcji wektora przyspieszenia (grawitacji), który jest porównany z rzeczywistym zmierzonym za pomocą ACC.
+
+Eksperymenty zostały przeprowadzone dla podanego zestawu danych, tak też więc kalibracja została przeprowadzona na podstawie tych danych. Szczegóły kalibracji czujników opisano niżej.
+
 ## 1. Kalibracja czujników
 
 TODO: skalowanie do wartości - np. *pi/180/1000
