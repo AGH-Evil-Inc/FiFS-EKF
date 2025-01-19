@@ -136,35 +136,44 @@ if __name__ == '__main__':
 
     # Wykresy predykcji i porównanie z rzeczywistymi danymi
     # Pierwsze 7000 - nałożone prawdziwe pozycja z [train part]
-    fig, axs = plt.subplots(3, 2, figsize=(12, 5))
+    fig, axs = plt.subplots(3, 2, figsize=(24, 12))
     labels = ["Roll", "Pitch", "Yaw"]
     for i, label in enumerate(labels):
         axs[i, 0].plot(data['Time'], eval(f"pred_{label.lower()}"), label=f"{label} prediction")
         axs[i, 0].plot(data_train['Time'], data_train[label.lower()], label=f"{label} actual")
         axs[i, 0].legend()
         axs[i, 0].grid()
+        axs[i, 0].set_title(f"{label}")
+        axs[i, 0].set_xlabel("Time [s]")
+        axs[i, 0].set_ylabel(f"Rotation value [degrees]")
 
     acc_labels = ["X", "Y", "Z"]
     for i, label in enumerate(acc_labels):
-        axs[i, 1].plot(data['Time'], h_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"Predykcja ACC {label}", zorder=10)
-        axs[i, 1].plot(data['Time'], z_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"Pomiar ACC {label}")
+        axs[i, 1].plot(data['Time'], h_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"ACC {label} prediction", zorder=10)
+        axs[i, 1].plot(data['Time'], z_vec[:, i], marker='.', markersize=1, linewidth=0.5, label=f"ACC {label} measurement")
         axs[i, 1].legend()
         axs[i, 1].grid()
+        axs[i, 1].set(title=f"Prediction of ACC {label} from orientation",
+                      xlabel="Time [s]",
+                      ylabel=f"Acceleration [$\\times 9.81~m/s^2$]")
 
     fig.tight_layout()
 
 
     # Wykres dla biasów i kwaternionów
-    fig2, axs2 = plt.subplots(4, 2, figsize=(12, 5))
+    fig2, axs2 = plt.subplots(4, 2, figsize=(24, 12))
     gyro_bias_labels = ["X", "Y", "Z"]
     for i, label in enumerate(gyro_bias_labels):
         axs2[i,0].plot(data['Time'], gyro_bias_history[:,i], marker='.', markersize=1, linewidth=0.5, label=f"Bias GYRO {label}", zorder=10)
         axs2[i,0].fill_between(data['Time'],
                               gyro_bias_history[:,i] - gyro_bias_std_history[:,i],
                               gyro_bias_history[:,i] + gyro_bias_std_history[:,i],
-                              color='gray', alpha=0.5, label=f"Odch. std. bias GYRO {label}")
+                              color='gray', alpha=0.5, label=f"Std. dev. bias GYRO {label}")
         axs2[i,0].legend()
         axs2[i,0].grid()
+        axs2[i,0].set(title=f"Bias GYRO {label}",
+                      xlabel="Time [s]",
+                      ylabel=f"Bias value [rad/s]")
 
     axs2[3,0].axis('off')
 
@@ -177,17 +186,20 @@ if __name__ == '__main__':
         axs2[i, 1].fill_between(data['Time'],
                                 quaternion_prediction_history[:, (i+3) % 4] - quaternion_prediction_std_history[:, (i+3) % 4],
                                 quaternion_prediction_history[:, (i+3) % 4] + quaternion_prediction_std_history[:, (i+3) % 4],
-                                color='gray', alpha=0.5, label=f"Odch. std. Quaternion {label}")
+                                color='gray', alpha=0.5, label=f"Std. dev. Quaternion {label}")
         axs2[i, 1].legend()
         axs2[i, 1].grid()
-        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Odch. std. Quaternion {label}")
-        axs2_q[i].set_ylabel('Odch. std.', color=std_dev_color)
+        axs2[i, 1].set(title=f"Quaternion part $q_{label}$",
+                       xlabel="Time [s]",
+                       ylabel=f"Quaternion value")
+        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Std. dev. Quaternion {label}")
+        axs2_q[i].set_ylabel('Std. dev.', color=std_dev_color)
         axs2_q[i].tick_params(axis='y', labelcolor=std_dev_color)
 
     axs2_q = [axs2[i, 1].twinx() for i in range(4)]
     for i, label in enumerate(["W", "X", "Y", "Z"]):
-        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Odch. std. Quaternion {label}")
-        axs2_q[i].set_ylabel('Odch. std.', color=std_dev_color)
+        axs2_q[i].plot(data['Time'], quaternion_prediction_std_history[:, i], color=std_dev_color, linewidth=0.5, linestyle='--', label=f"Std. dev. Quaternion {label}")
+        axs2_q[i].set_ylabel('Std. dev.', color=std_dev_color)
         axs2_q[i].tick_params(axis='y', labelcolor=std_dev_color)
 
     fig2.tight_layout()
