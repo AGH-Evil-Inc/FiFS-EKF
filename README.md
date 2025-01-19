@@ -6,9 +6,15 @@ Trying to get orientation of an object based on accelerometer and qyroscope meas
 TODO: skalowanie do wartości - np. *pi/180/1000
 
 ### GYRO (żyroskop):
+
 - Wyznaczenie biasów początkowych - wprowadzane do EKF, zmieniane wewnątrz, nie są odejmowane przed,
 - Wyznaczenie wariancji dla każdej osi - wprowadzane do EKF
+- skalowanie z [mdps] (mili degrees per second) na [rad/s]
+
 ### ACC (akcelerometr):
+
+Skalowanie wartości [$g\ m/s^2$] do [$m/s^2$]
+
 Wyznaczenie macierzy kalibracyjnej (skala i biasy):
 
 $$
@@ -343,8 +349,21 @@ Gdzie $\sigma_{ax}^2, \sigma_{ay}^2, \sigma_{az}^2$ to wariancje szumu każdej o
 
 ## 4. Wyniki
 
-TODO
+Poniżej wykres predykcji orientacji w notacji kątów Eulera z porównaniem z wartościami rzeczywistymi (pomarańczowe, tylko do ~35s). Dla czytelności wykresu, został zastosowany unwrap (dzięki czemu największe odchylenie Yaw nie "zapętla się" na wartość -180).
 
+![Orientation Prediction](docs/images/plot_OrientationPrediction.png)
+
+Podobnie jak wyżej, na podstawie wyznaczonej orientacji była wyznaczona predykcja wektora grawitacji i porównany z pomiarem z ACC.
+
+![ACC Prediction From Orientation](docs/images/plot_AccPredictionFromOrientation.png)
+
+Poniżej historia zmian biasów żyroskopu z wizualizacją odchylenia standardowego. Widać, że największą niepewność miała oś Z (odpowiedzialna za Yaw), ponieważ nie miał pewnego pomiaru korekcji od ACC.
+
+![Gyro Bias Vaules](docs/images/plot_GyroBiasVaules.png)
+
+Podobnie do biasów powyżej - poniżej historia wartości części kwaternionu orientacji
+
+![Quaternion Values](docs/images/plot_QuaternionValues.png)
 
 ## 5. Bibliografia
 
