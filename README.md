@@ -1,5 +1,5 @@
-# GyroAccKalmanFilter
-Trying to get orientation of an object based on accelerometer and qyroscope measurments
+# FiFS - Extended Kalman Filter
+Trying to get orientation of an object based on accelerometer and qyroscope measurments, implementing Extended Kalman Filter.
 
 ## Wstęp
 
